@@ -1,0 +1,475 @@
+<title>Разбор курса «Высокодоходный скальпинг СМЕ»</title>
+<style>
+/* ---------------------------------------------------------------------------
+   Палитра взята из предмета: это цвета торгового терминала, а не абстрактный
+   набор. Земля — холодная серо-синяя бумага графика, акцент — стальной индиго
+   ценовых линий, красный и зелёный — bid и ask футпринта (они семантические,
+   акцентом не работают).
+
+   Три состояния темы: голый :root задаёт светлую (её видит и тот, у кого
+   ничего не выбрано), media-блок перекрывает токены при системной тёмной,
+   [data-theme] перекрывает их же по кнопке — в обе стороны.
+--------------------------------------------------------------------------- */
+:root {
+  --bg:#eceff3; --card:#ffffff;
+  --ink:#141920; --ink2:#3f4854; --mut:#737e8c;
+  --line:#d3d9e1; --accent:#2b4a7d;
+  --bad:#a83128; --good:#15704a; --warn:#8a6414;
+  --badbg:#f7e9e7; --goodbg:#e7f2ec; --warnbg:#f8f0dd;
+
+  --f-display: Georgia, "Noto Serif", "Times New Roman", serif;
+  --f-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono: ui-monospace, "Roboto Mono", Consolas, "DejaVu Sans Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#0f1319; --card:#171d26;
+    --ink:#e4e9f0; --ink2:#aab4c2; --mut:#7b8695;
+    --line:#28303b; --accent:#83a9e6;
+    --bad:#e57f72; --good:#4ec394; --warn:#d4b45f;
+    --badbg:#2e1a19; --goodbg:#122b23; --warnbg:#2c2513;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:#0f1319; --card:#171d26;
+  --ink:#e4e9f0; --ink2:#aab4c2; --mut:#7b8695;
+  --line:#28303b; --accent:#83a9e6;
+  --bad:#e57f72; --good:#4ec394; --warn:#d4b45f;
+  --badbg:#2e1a19; --goodbg:#122b23; --warnbg:#2c2513;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);          /* обязательно явный: прозрачный займёт чужую тему */
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 17px; line-height: 1.62;
+  -webkit-text-size-adjust: 100%;
+}
+img, svg, table { max-width: 100%; }
+b { font-weight: 600; }
+
+/* Масthead: тонкая линия акцента во всю ширину — единственная декорация. */
+.rule { height: 3px; background: var(--accent); }
+
+.page { padding: 2rem 1.15rem 4rem; }
+
+/* Переключатель темы. Ничего не стамповано по умолчанию, поэтому системная
+   тема работает сама; кнопка перебивает её в любую сторону. */
+.theme {
+  position: fixed; top: .7rem; right: .7rem; z-index: 10;
+  font-family: var(--f-mono); font-size: .68rem; letter-spacing: .1em;
+  text-transform: uppercase; cursor: pointer;
+  color: var(--ink2); background: var(--card);
+  border: 1px solid var(--line); border-radius: 2px; padding: .4rem .6rem;
+}
+.theme:hover { color: var(--ink); border-color: var(--accent); }
+.theme:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media print { .theme { display: none; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* --- общее оформление разбора --------------------------------------------- */
+/* Оформление разбора. Общее для обеих оболочек: рабочей (шаблон Библиотеки)
+   и отдельной (для отправки). Цвета берутся ТОЛЬКО из переменных, поэтому
+   одна и та же разметка выглядит уместно в обеих и переживает смену темы.
+
+   Опорный образ — сам футпринт: тонкая сетка, моноширинные табличные цифры,
+   подкрашенные ячейки на крайних значениях. Отсюда все решения ниже. */
+
+.wrap, .page { max-width: 44rem; margin: 0 auto; }
+
+/* --- типографика ---------------------------------------------------------- */
+.eyebrow {
+  font-family: var(--f-mono);
+  font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--mut); margin: 0 0 .5rem; display: flex; align-items: center; gap: .6rem;
+}
+.eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+h1 {
+  font-family: var(--f-display);
+  font-size: clamp(1.9rem, 6.5vw, 2.9rem); line-height: 1.05; letter-spacing: -.02em;
+  margin: 0 0 .7rem; text-wrap: balance;
+}
+h2 {
+  font-family: var(--f-display);
+  font-size: clamp(1.25rem, 4.2vw, 1.6rem); line-height: 1.15; letter-spacing: -.015em;
+  margin: 0 0 .6rem; text-wrap: balance; border: 0; padding: 0;
+}
+h3 {
+  font-family: var(--f-display);
+  font-size: 1.08rem; line-height: 1.2; margin: 1.8rem 0 .4rem; letter-spacing: -.01em;
+}
+p { margin: 0 0 .9rem; }
+.dek { font-size: 1.06rem; color: var(--ink2); max-width: 34rem; }
+.stamp { font-family: var(--f-mono); font-size: .78rem; color: var(--mut); margin: 0; }
+
+.top { padding: 0 0 1.6rem; }
+
+/* --- разделы -------------------------------------------------------------- */
+section { padding: 2.2rem 0 .4rem; border-top: 1px solid var(--line); margin-top: 1.8rem; }
+section:first-of-type { border-top: 0; margin-top: 0; }
+.top + section { border-top: 0; }
+
+/* --- карточка вывода: плоская панель, цветная линия сверху ----------------- */
+/* Намеренно без скруглений и без левой полосы — это язык терминала, а не карточки. */
+.verdict {
+  background: var(--card); border: 1px solid var(--line); border-top: 3px solid var(--bad);
+  border-radius: 3px; padding: 1.2rem 1.3rem; margin: 1.4rem 0;
+}
+.verdict.flat { margin: 1.8rem 0; }
+.verdict h2, .verdict h3 { margin-top: 0; }
+.verdict > :last-child { margin-bottom: 0; }
+.verdict.bad { border-top-color: var(--bad); background: var(--badbg); }
+.verdict.ok  { border-top-color: var(--good); background: var(--goodbg); }
+
+ol.why { margin: .9rem 0 0; padding-left: 1.3rem; }
+ol.why li { margin: .55rem 0; }
+ol.why::marker { font-family: var(--f-mono); }
+
+ul.keep { margin: .9rem 0; padding-left: 1.15rem; }
+ul.keep li { margin: .7rem 0; }
+
+/* --- сноска --------------------------------------------------------------- */
+.note {
+  font-size: .93rem; color: var(--ink2); background: var(--card);
+  border: 1px solid var(--line); border-left: 3px solid var(--accent);
+  border-radius: 0 3px 3px 0; padding: .85rem 1.05rem; margin: 1.2rem 0;
+}
+
+/* --- таблицы как футпринт: тонкая сетка, табличные цифры ------------------- */
+.scroll { overflow-x: auto; margin: 1rem 0; -webkit-overflow-scrolling: touch; }
+.scroll table { margin: 0; }
+table {
+  border-collapse: collapse; width: 100%; font-size: .9rem;
+  border: 1px solid var(--line);
+}
+table.wide { min-width: 32rem; }
+th, td {
+  padding: .55rem .7rem; border: 1px solid var(--line);
+  text-align: left; vertical-align: top;
+}
+th {
+  font-family: var(--f-mono); font-size: .68rem; font-weight: 500;
+  letter-spacing: .09em; text-transform: uppercase; color: var(--mut);
+  background: var(--bg); text-align: left; line-height: 1.35;
+}
+thead th:not(:first-child) { text-align: right; }
+td.n {
+  font-family: var(--f-mono); font-variant-numeric: tabular-nums;
+  text-align: right; white-space: nowrap;
+}
+/* Подкраска крайних значений — ровно то, что делает футпринт со своими ячейками. */
+td.x-hot  { background: var(--badbg);  color: var(--bad);  font-weight: 600; }
+td.x-warm { background: var(--warnbg); color: var(--warn); }
+td.x-cool { background: var(--goodbg); color: var(--good); }
+tr.fresh td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+
+.tag {
+  font-family: var(--f-mono); font-size: .62rem; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--mut);
+  border: 1px solid var(--line); border-radius: 2px; padding: .05rem .3rem;
+  white-space: nowrap; vertical-align: .08em;
+}
+
+/* --- подвал --------------------------------------------------------------- */
+.src { margin-top: 2.6rem; padding-top: 1.6rem; border-top: 1px solid var(--line);
+       font-size: .9rem; color: var(--ink2); }
+.src ul { margin: .5rem 0 0; padding-left: 1.15rem; }
+.src li { margin: .35rem 0; }
+
+@media (max-width: 34rem) {
+  th, td { padding: .45rem .5rem; }
+  table { font-size: .84rem; }
+}
+
+</style>
+
+<div class="rule"></div>
+<button type="button" class="theme" id="th">Тема</button>
+
+<main class="page">
+
+<header class="top">
+  <p class="eyebrow">Разбор обучающего курса</p>
+  <h1>«Высокодоходный скальпинг&nbsp;СМЕ»</h1>
+  <p class="dek">Сергей Пыхов, весна 2020, закрытая группа. Одиннадцать модулей,
+  десять часов видео, две методички. Проверено против собственных замеров
+  по фьючерсам CME.</p>
+  <p class="stamp">13 августа 2026</p>
+</header>
+
+<section class="verdict bad">
+  <h2>Пустышка — но не потому, что автор жульничает</h2>
+  <p>Метод внятный и честно расписанный, а свою заявку «100 долларов за час» он
+  действительно отработал на реальном счёте: снял в конце записи сто долларов и показал
+  транзакцию. Мимо он идёт по трём причинам, и каждой хватило бы в одиночку.</p>
+  <ol class="why">
+    <li><b>Восемь его несущих элементов уже измерены и похоронены</b> — причём два из них
+    накануне, 12 августа, ещё до того как курс открыли.</li>
+    <li><b>Базовый бракет не окупается на инструменте, который он сам предписывает.</b>
+    На MNQ его тейк в 4 тика равен ровно одному кругу комиссии.</li>
+    <li><b>Доказательство стоит на 14 сделках одного дня.</b> На таком объёме работающая
+    система статистически неотличима от нулевой: вероятность получить такой результат
+    при полном отсутствии преимущества — 0.22.</li>
+  </ol>
+</section>
+
+<section>
+  <p class="eyebrow">Модули 5–9</p>
+  <h2>Что предлагает курс</h2>
+  <p>Платформа NinjaTrader 7/8 или MetaTrader 5, футпринт через MarketBalance, брокер AMP.
+  Четыре модуля уходят на установку платформ, один на чтение футпринта, дальше две
+  стратегии, открытие сделок, манименеджмент, психология и практика. Обе методички
+  расписывают метод полностью — видео их пересказывают.</p>
+
+  <div class="scroll">
+  <table class="wide">
+    <thead><tr><th>Стратегия</th><th>Сигнал входа</th><th>Бракет</th></tr></thead>
+    <tbody>
+    <tr><td><b>Базовая</b></td>
+        <td>Футпринт 10&nbsp;мин. <b>Флет</b> — лимитка от верхней или нижней границы
+        часового канала, допуск 3 деления, в середине канала не торгуем.
+        <b>Тренд</b> — вход по тренду на формации «перевертыш»: продавили, удержали,
+        пошли дальше</td>
+        <td>ТП 4&nbsp;тика / СЛ 5&nbsp;тиков в Европу,<br>5 / 6 в Америку.<br>Жизнь сделки 20&nbsp;мин</td></tr>
+    <tr><td><b>Volatility</b></td>
+        <td>Тот же футпринт плюс свечи 15&nbsp;сек. Вход на <b>остановке цены внутри
+        импульса</b>: импульс вверх, кластер со встречной отрицательной дельтой,
+        цену ниже не пускают — покупка. Подтверждение «параболическим закруглением»
+        на 15-секундном графике</td>
+        <td>ТП 6–10 / СЛ 8–12 в Европу,<br>ТП 7–12 / СЛ 10–15 в Америку.<br>Жизнь сделки 10&nbsp;мин</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Манименеджмент: <b>один лот на микро-контракте независимо от размера депозита</b>,
+  не более пяти сделок в день, цель 50–100&nbsp;$ в день на микро лот при балансе 1000&nbsp;$,
+  лот наращивать по одному микро на каждые 300&nbsp;$.</p>
+</section>
+
+<section>
+  <p class="eyebrow">Проверка первая</p>
+  <h2>Какой винрейт нужен, чтобы просто не терять</h2>
+  <p>У обеих стратегий <b>тейк меньше стопа</b>. Это законная геометрия, но она сразу
+  задаёт планку. Планка посчитана на <b>заверенных спеках</b> и <b>замеренной комиссии</b>,
+  а не на словах курса.</p>
+
+  <p class="note">Комиссия взята <b>2,00&nbsp;$ за круг для всех</b> — это замер по счёту, но
+  сделан он только на MNQ и MGC. Для ES и NQ круг не измерен; у полноразмерного контракта
+  ставка обычно выше, значит настоящие пороги ниже только вырастут. Цена входа — среднее
+  по журналу, 13&nbsp;тыс. сделок: ES 0,52 тика, MES 0,66, MGC 1,60, MNQ 1,68, NQ 2,58.</p>
+
+  <h3>Базовая стратегия, тейк 4 тика против стопа 5</h3>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Инструмент</th><th>идеальный вход</th><th>с реальной ценой входа</th></tr></thead>
+    <tbody><tr><td>ES <span class="tag">носитель</span></td><td class="n x-cool">57.3&nbsp;%</td><td class="n x-warm">63.1&nbsp;%</td></tr><tr><td>NQ <span class="tag">носитель</span></td><td class="n x-warm">60.0&nbsp;%</td><td class="n x-hot">88.7&nbsp;%</td></tr><tr><td>MES</td><td class="n x-hot">73.3&nbsp;%</td><td class="n x-hot">80.7&nbsp;%</td></tr><tr><td>MNQ <span class="tag">носитель</span></td><td class="n x-hot">100.0&nbsp;%</td><td class="n x-hot">невозможно</td></tr><tr><td>MGC <span class="tag">носитель</span></td><td class="n x-hot">77.8&nbsp;%</td><td class="n x-hot">95.6&nbsp;%</td></tr></tbody>
+  </table>
+  </div>
+
+  <h3>Volatility, Америка, тейк 9,5 против стопа 12,5 тика</h3>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Инструмент</th><th>идеальный вход</th><th>с реальной ценой входа</th></tr></thead>
+    <tbody><tr><td>ES <span class="tag">носитель</span></td><td class="n x-cool">57.5&nbsp;%</td><td class="n x-cool">59.9&nbsp;%</td></tr><tr><td>NQ <span class="tag">носитель</span></td><td class="n x-cool">58.6&nbsp;%</td><td class="n x-hot">70.4&nbsp;%</td></tr><tr><td>MES</td><td class="n x-warm">64.1&nbsp;%</td><td class="n x-warm">67.1&nbsp;%</td></tr><tr><td>MNQ <span class="tag">носитель</span></td><td class="n x-hot">75.0&nbsp;%</td><td class="n x-hot">82.6&nbsp;%</td></tr><tr><td>MGC <span class="tag">носитель</span></td><td class="n x-warm">65.9&nbsp;%</td><td class="n x-hot">73.2&nbsp;%</td></tr></tbody>
+  </table>
+  </div>
+
+  <div class="verdict bad flat">
+    <h3>Курс предписывает микро — и ровно на микро его базовый бракет не может окупиться</h3>
+    <p>На MNQ тейк в 4 тика — это <b>2,00&nbsp;$</b>, то есть <b>ровно один круг комиссии</b>.
+    Выигрышная сделка приносит ноль, проигрышная теряет 4,50&nbsp;$. Порог безубытка равен
+    ста процентам ещё до того, как мы вспомнили про цену входа. На MGC и MES не невозможно,
+    но 78&nbsp;% и 73&nbsp;% — выше, чем показывала любая наша геометрия за всю историю
+    проекта. Осмысленный ряд начинается только с ES и NQ, то есть с полноразмерных
+    контрактов, которые манименеджмент того же курса запрещает до депозита в 3000&nbsp;$.</p>
+  </div>
+
+  <p>Потолок дня по правилам самого курса — пять сделок, один микро лот, стопроцентный
+  винрейт, то есть заведомо недостижимый максимум:</p>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Микро</th><th>базовая,<br>брутто</th><th>базовая,<br>нетто</th><th>Volatility,<br>брутто</th><th>Volatility,<br>нетто</th></tr></thead>
+    <tbody><tr><td>MNQ</td><td class="n">10.00&nbsp;$</td><td class="n x-hot">0.00&nbsp;$</td><td class="n">30.00&nbsp;$</td><td class="n">20.00&nbsp;$</td></tr><tr><td>MES</td><td class="n">25.00&nbsp;$</td><td class="n ">15.00&nbsp;$</td><td class="n">75.00&nbsp;$</td><td class="n">65.00&nbsp;$</td></tr><tr><td>MGC</td><td class="n">20.00&nbsp;$</td><td class="n ">10.00&nbsp;$</td><td class="n">60.00&nbsp;$</td><td class="n">50.00&nbsp;$</td></tr></tbody>
+  </table>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Проверка вторая, модуль 11</p>
+  <h2>Живая запись «100 долларов за час»</h2>
+  <p>Пятьдесят две минуты непрерывной торговли с комментарием. Расшифровал целиком.
+  <b>Заявку он выполнил:</b> четырнадцать сделок, три убыточные, плюс сто долларов
+  примерно за сорок девять минут. Тейк ставил 250–500 пунктов, стоп 300 — это ровно
+  10–20 и 12 тиков, то есть его «пункт» оказался тиком, как и читалось по методичкам.
+  В конце он специально снимает со счёта сто долларов и показывает транзакцию, чтобы
+  закрыть вопрос «это демо-счёт».</p>
+
+  <p>Обвинять его в подделке не за что. Вопрос единственный и другой:
+  <b>отличает ли эта запись работающую систему от нулевой?</b> Одиннадцать побед
+  из четырнадцати — это 78,6&nbsp;%, а доверительный интервал такой оценки
+  <b>от 52.4&nbsp;% до 92.4&nbsp;%</b>. Внутрь этого интервала попадает всё что угодно, включая
+  голый ноль.</p>
+
+  <div class="scroll">
+  <table class="wide">
+    <thead><tr><th>Сценарий издержек</th><th>нужный<br>винрейт</th><th>попадает<br>в интервал</th><th>вероятность такого<br>результата при нуле</th></tr></thead>
+    <tbody><tr><td>Комиссия 1,00&nbsp;$ (розничный брокер 2020), вход идеальный</td><td class="n">58.2&nbsp;%</td><td class="n ">да</td><td class="n">0.10</td></tr><tr><td>Комиссия 2,00&nbsp;$ (наша, замерена), вход идеальный</td><td class="n">61.8&nbsp;%</td><td class="n ">да</td><td class="n">0.15</td></tr><tr><td>Комиссия 2,00&nbsp;$ и наша цена входа 0,66 тика</td><td class="n">64.8&nbsp;%</td><td class="n ">да</td><td class="n">0.22</td></tr></tbody>
+  </table>
+  </div>
+
+  <p>Ни один сценарий не отвергается. Даже в самом жёстком, с нашей комиссией и нашей
+  ценой входа, результат «11 из 14» выпадает при полном отсутствии преимущества
+  примерно в каждом пятом случае. Сколько сделок нужно, чтобы тот же винрейт
+  что-то доказал:</p>
+
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Объём</th><th>побед при 78,6&nbsp;%</th><th>вероятность при нуле</th></tr></thead>
+    <tbody><tr><td>14 сделок</td><td class="n">11</td><td class="n x-hot">0.2163</td></tr><tr><td>30 сделок</td><td class="n">24</td><td class="n x-hot">0.0562</td></tr><tr><td>60 сделок</td><td class="n">47</td><td class="n x-cool">0.0172</td></tr><tr><td>100 сделок</td><td class="n">79</td><td class="n x-cool">0.0015</td></tr><tr><td>150 сделок</td><td class="n">118</td><td class="n x-cool">0.0002</td></tr></tbody>
+  </table>
+  </div>
+
+  <p class="note">Порог проходится начиная примерно с <b>60 сделок</b>. То есть запись
+  честная, но доказывает она ровно вчетверо меньше, чем нужно. И отдельно: в записи
+  <b>четырнадцать сделок за сорок девять минут</b> при собственном правиле
+  «не более пяти сделок в день» — демонстрация нарушает манименеджмент того же курса
+  почти втрое.</p>
+</section>
+
+<section>
+  <p class="eyebrow">Проверка третья</p>
+  <h2>Каждый несущий элемент уже похоронен</h2>
+  <div class="scroll">
+  <table class="wide">
+    <thead><tr><th>Элемент курса</th><th>Вердикт</th><th>Число</th></tr></thead>
+    <tbody>
+    <tr><td>Флет: лимитка от границы часового канала</td>
+        <td>«Фейд возврата» значимо <b>хуже монетки</b></td><td class="n">t&nbsp;=&nbsp;−2,15</td></tr>
+    <tr class="fresh"><td>«В середине канала не торгуем»</td>
+        <td><b>Опровергнуто накануне.</b> Контраст по дням отрицательный, знак обратный заявленному</td>
+        <td class="n">−0,0116<br>t&nbsp;=&nbsp;−1,07</td></tr>
+    <tr><td>«Накопитель» — стена лимиток держит уровень</td>
+        <td>Поглощение опровергнуто везде, перекос стакана — монетка</td>
+        <td class="n">50,11&nbsp;%<br>25&nbsp;289&nbsp;событий</td></tr>
+    <tr><td>«Перевертыш»: продавили, удержали, пошли дальше</td>
+        <td>Пробой с подтверждением дельтой <b>хуже</b> непотдтверждённого</td>
+        <td class="n">−0,240<br>против −0,055</td></tr>
+    <tr><td>Volatility: вход на остановке против дельты</td>
+        <td>Дельта-дивергенция похоронена, <b>весь класс «фейд» мёртв</b></td>
+        <td class="n">t&nbsp;=&nbsp;−0,61<br>n&nbsp;=&nbsp;2998</td></tr>
+    <tr class="fresh"><td>«Торгуем только на повышенной волатильности»</td>
+        <td><b>Открытая зацепка.</b> Знак устойчив, но величина в сто раз ниже комиссии</td>
+        <td class="n">+0,0235<br>t&nbsp;=&nbsp;1,06</td></tr>
+    <tr><td>Накопительная дельта 0,1–0,2&nbsp;% как сила сигнала</td>
+        <td>Всплеск объёма отскок и пробитие не делит</td>
+        <td class="n">50,08 против 49,48&nbsp;%<br>t&nbsp;=&nbsp;1,48</td></tr>
+    <tr><td>Вход лимиткой у границы</td>
+        <td>«Пассивный вход» закрыт в минус</td><td class="n">—</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Отдельного внимания стоит совпадение: <b>две проверки, сделанные накануне по совсем
+  другому семинару, попали ровно в две стратегии этого курса.</b> Одна — в его базовую
+  (край канала против середины), вторая — в его Volatility (торгуем только когда волатильно).
+  Разные авторы, разные годы, один каркас. Это уже четвёртая школа подряд с тем же набором,
+  и вывод здесь не про курс, а про <b>класс</b>: русскоязычная орфлоу-школа проповедует
+  один метод, и он перемерен с восьми сторон.</p>
+</section>
+
+<section>
+  <p class="eyebrow">Что забрать</p>
+  <h2>Неглупое там всё-таки есть</h2>
+  <ul class="keep">
+    <li><b>Отмена сделки, если цена ушла на дистанцию тейка без нас.</b> Здравое правило
+    против догоняющего входа, и в записи он ему следует буквально: раз за разом снимает
+    ордер со словами «поздно, цена ушла».</li>
+    <li><b>Жёсткий срок жизни сделки</b> — десять или двадцать минут, дальше выход по рынку.
+    Наши измерения устроены так же, и это подтверждает, что горизонт выбран не с потолка.</li>
+    <li><b>«Одна сделка в одну свечу»</b> — единственное место, где курс спорит с нашим
+    измерением, а не повторяет его. Он оставляет <b>первый</b> импульс. У нас измерено, что
+    первая метка короткой серии систематически <b>хуже</b> соседей: z&nbsp;=&nbsp;−3,10,
+    восемь инструментов из десяти. Совпадение направленное, но <b>не довод</b>: наш эффект
+    про короткие серии, а длина серии известна только после окна.</li>
+  </ul>
+
+  <p class="note">Побочно из записи: он показывает приём, которого <b>нет в его же
+  методичках</b> и который сам называет рискованным — если к концу десятиминутки набирается
+  крупный односторонний объём, на открытии следующей часто идёт обратное движение.
+  Похожее у нас меряно на границе часа и вышло убыточным (48,1&nbsp;% при тейке, равном стопу,
+  n&nbsp;=&nbsp;7826). На границе десятиминутки не меряно.</p>
+</section>
+
+<section>
+  <p class="eyebrow">Самопроверка</p>
+  <h2>Приёмка разбора</h2>
+  <div class="scroll">
+  <table class="wide">
+    <tbody>
+    <tr><td>Ответил на исходный вопрос</td>
+        <td>Да: «есть что взять или всё пройдено» — пройдено, с поимённым списком где именно</td></tr>
+    <tr><td>Есть число и проверка вне выборки</td>
+        <td>Числа есть. Но <b>нового замера по рынку сегодня не делалось</b>: экономика — арифметика
+        на ранее заверенных спеках, вердикты по элементам — ссылки на прошлые прогоны,
+        статистика записи — биномиальный счёт по его же оглашённым цифрам</td></tr>
+    <tr><td>Противоречит прошлому</td>
+        <td>Нет, опирается на него. Единственное расхождение — правило «одна сделка в свечу»,
+        и оно помечено как ненадёжное с обеих сторон</td></tr>
+    <tr><td>Хватает N и дней</td>
+        <td>Для арифметики N не нужен. Числа под ней — 13&nbsp;тыс. сделок и замер комиссии по счёту.
+        <b>У самой записи N не хватает, и это её главный дефект</b></td></tr>
+    <tr><td>Из скольких выбрано</td>
+        <td><b>По одному на элемент.</b> Перебора нет: список задан методичками курса.
+        Вилки тейка сведены к серединам заранее; крайние значения вилок порог не переворачивают</td></tr>
+    <tr><td>Круговая связь</td>
+        <td>Нет: комиссия и цена входа измерены раньше и независимо от этого курса</td></tr>
+    <tr><td>Переживает скептика</td>
+        <td>Вопрос не по адресу: положительной находки, которую надо защищать, здесь нет.
+        Отрицательный вывод перебором не портится</td></tr>
+    <tr class="fresh"><td><b>Где могу быть неправ</b></td>
+        <td>Инструмент записи определён <b>косвенно</b> — по размеру свечи и словам «микро лот»
+        сходится MES, но прямо он его не называет. Ошибись я тут, пороги сдвинутся, хотя вывод
+        про объём выборки не изменится. Второе: комиссия ES и NQ у нас <b>не измерена</b>,
+        подставлены 2,00&nbsp;$, и это делает их пороги оптимистичными, а не строгими</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<footer class="src">
+  <p class="eyebrow">Источники</p>
+  <ul>
+    <li>Методички курса: базовая стратегия, Volatility, манименеджмент — прочитаны целиком, 28 слайдов</li>
+    <li>Живая запись модуля 11 — расшифрована локально, 52 минуты, 478 реплик</li>
+    <li>Спеки инструментов и цена входа — заверены по журналу сделок, 13&nbsp;тыс. записей</li>
+    <li>Комиссия — замер по счёту 10 и 11 августа 2026</li>
+  </ul>
+</footer>
+
+</main>
+
+<script>
+(function () {
+  var K = "cme-theme", r = document.documentElement, b = document.getElementById("th");
+  function saved() { try { return localStorage.getItem(K); } catch (e) { return null; } }
+  var s = saved();
+  if (s === "dark" || s === "light") r.setAttribute("data-theme", s);
+  function dark() {
+    var a = r.getAttribute("data-theme");
+    if (a) return a === "dark";
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  function paint() { b.textContent = dark() ? "Светлее" : "Темнее"; }
+  paint();
+  b.addEventListener("click", function () {
+    var next = dark() ? "light" : "dark";
+    r.setAttribute("data-theme", next);
+    try { localStorage.setItem(K, next); } catch (e) {}
+    paint();
+  });
+})();
+</script>
