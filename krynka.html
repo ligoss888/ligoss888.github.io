@@ -1,0 +1,384 @@
+﻿<meta charset="utf-8">
+<!--back-button-->
+<style>
+  body { padding-top: 4.6rem !important; }
+  .lib-bar {
+    position: fixed; top: 14px; left: 16px; z-index: 99999;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .back-to-lib {
+    display: inline-flex; align-items: center; gap: .5rem;
+    padding: .5rem 1rem; border-radius: 999px; text-decoration: none;
+    font: 600 14px/1 -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color: #fff; background: #3d6b4f; border: 1px solid rgba(0,0,0,.12);
+    box-shadow: 0 3px 10px rgba(0,0,0,.20);
+    transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
+  }
+  .back-to-lib:hover { background: #345e45; transform: translateY(-1px); box-shadow: 0 5px 14px rgba(0,0,0,.26); }
+  /* Иконки нарисованы, а не набраны эмодзи: обводка той же толщины, что текст,
+     цвет наследуется через currentColor. Разбор «7 признаков нейродизайна», 05.08.2026. */
+  .back-to-lib .ic { width: 1.05em; height: 1.05em; fill: none; stroke: currentColor;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vertical-align: -.14em; }
+  /* Звезда-переключатель уровня ЭТОГО файла (тот же lib-tiers, что в библиотеке) */
+  .lib-tier {
+    display: inline-flex; align-items: center; gap: .4rem; cursor: pointer;
+    padding: .5rem .8rem; border-radius: 999px;
+    font: 600 13px/1 -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color: #fff; background: #3d6b4f; border: 1px solid rgba(0,0,0,.12);
+    box-shadow: 0 3px 10px rgba(0,0,0,.20);
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .lib-tier:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(0,0,0,.26); }
+  /* Кнопка День/Ночь — переключатель темы ЭТОЙ страницы (правило 08.08.2026:
+     файл не смеет открываться тёмным сам собой; тема всегда переключается). */
+  .lib-theme {
+    display: inline-flex; align-items: center; gap: .4rem; cursor: pointer;
+    padding: .5rem .8rem; border-radius: 999px;
+    font: 600 13px/1 -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color: #fff; background: #3d6b4f; border: 1px solid rgba(0,0,0,.12);
+    box-shadow: 0 3px 10px rgba(0,0,0,.20);
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .lib-theme:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(0,0,0,.26); }
+  .lib-theme .ic { width: 1.05em; height: 1.05em; fill: none; stroke: currentColor;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vertical-align: -.14em; }
+  /* Звезда уровня: серая подложка + золотая заливка до отметки.
+     Раньше эффект держался на background-clip:text по глифу ★ — теперь это
+     две наложенные фигуры, и символ больше не нужен. */
+  .lib-tier .lt-ic { display: inline-flex; line-height: 1; }
+  .lib-tier .ltg { width: 1.25em; height: 1.25em; display: block; }
+  .lib-tier .s-base { fill: rgba(255,255,255,.55); stroke: none; }
+  .lib-tier .s-fill { fill: none; stroke: none; }
+  .lib-tier .lt-ic.t3 .s-fill { fill: url(#lbg3); }
+  .lib-tier .lt-ic.t2 .s-fill { fill: url(#lbg2); }
+  /* Топ-1: кольцо и увеличение, как в Библиотеке — метка одна и та же,
+     разъезжаться ей нельзя. */
+  .lib-tier .s-ring { fill: none; stroke: none; }
+  .lib-tier .lt-ic.t1 .s-fill { fill: url(#lbg1); }
+  .lib-tier .lt-ic.t1 .s-ring { stroke: #ffe08a; stroke-width: 1.4; opacity: .6; }
+  .lib-tier .lt-ic.t1 .ltg { transform: scale(1.18); transform-origin: center; }
+  .lib-tier .lt-tx { opacity: .95; }
+  /* Цвет кнопок бара в тёмной теме. Управляется и системной темой (когда JS ещё
+     не проставил data-theme), и ручным переключателем data-theme="dark". */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .back-to-lib,
+    :root:not([data-theme="light"]) .lib-tier,
+    :root:not([data-theme="light"]) .lib-theme { background: #2f6b46; color: #eafff2; border-color: rgba(255,255,255,.10); }
+  }
+  :root[data-theme="dark"] .back-to-lib,
+  :root[data-theme="dark"] .lib-tier,
+  :root[data-theme="dark"] .lib-theme { background: #2f6b46; color: #eafff2; border-color: rgba(255,255,255,.10); }
+  @media print { .lib-bar { display: none; } }
+</style>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="lbg3" x1="0" y1="1" x2="0" y2="0"><stop offset=".34" stop-color="#ffd15a"/><stop offset=".34" stop-color="#ffd15a" stop-opacity="0"/></linearGradient>
+  <linearGradient id="lbg2" x1="0" y1="1" x2="0" y2="0"><stop offset=".67" stop-color="#ffcf52"/><stop offset=".67" stop-color="#ffcf52" stop-opacity="0"/></linearGradient>
+  <linearGradient id="lbg1" x1="0" y1="1" x2="0" y2="0"><stop offset="1" stop-color="#ffe08a"/></linearGradient>
+  <symbol id="lb-back" viewBox="0 0 24 24"><path d="M20 12H5M10.6 6.4L4 12l6.6 5.6"/></symbol>
+  <symbol id="lb-star" viewBox="0 0 24 24"><path d="M12 2 L14.47 8.6 L21.51 8.91 L15.99 13.3 L17.88 20.09 L12 16.2 L6.12 20.09 L8.01 13.3 L2.49 8.91 L9.53 8.6 Z"/></symbol>
+  <symbol id="lb-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></symbol>
+  <symbol id="lb-moon" viewBox="0 0 24 24"><path d="M20.5 14.2A8.2 8.2 0 1 1 9.8 3.5a6.4 6.4 0 0 0 10.7 10.7z"/></symbol>
+</defs></svg>
+<div class="lib-bar">
+  <a href="_library.html" class="back-to-lib" title="Вернуться в библиотеку"><svg class="ic" aria-hidden="true"><use href="#lb-back"/></svg> Библиотека</a>
+  <button type="button" id="libTheme" class="lib-theme" title="Переключить тему страницы"><svg class="ic" aria-hidden="true"><use href="#lb-sun"/></svg><span class="th-tx">Светлая</span></button>
+  <button type="button" id="libTier" class="lib-tier" title="Уровень важности этого файла — клик перебирает: нет, топ-3, топ-2, топ-1"><span class="lt-ic"><svg class="ltg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" class="s-ring"/><use href="#lb-star" class="s-base"/><use href="#lb-star" class="s-fill"/></svg></span><span class="lt-tx"></span></button>
+</div>
+<script>
+(function(){
+  // Переключатель темы. Правило 08.08.2026: разбор не открывается тёмным сам по
+  // себе — по умолчанию СВЕТЛАЯ, кнопка всегда меняет и запоминает выбор.
+  // Работает и на новых файлах (палитра на data-theme), и на СТАРЫХ с фиксированной
+  // тёмной палитрой — глушим/включаем их @media (prefers-color-scheme: dark).
+  var TKEY = "report-theme", root = document.documentElement, DARK = null;
+  function saved(){ try { return localStorage.getItem(TKEY); } catch(e){ return null; } }
+  function store(v){ try { localStorage.setItem(TKEY, v); } catch(e){} }
+  function collect(){
+    if (DARK) return DARK; DARK = [];
+    for (var i=0;i<document.styleSheets.length;i++){
+      var rules; try { rules = document.styleSheets[i].cssRules; } catch(e){ continue; }
+      if (!rules) continue;
+      for (var j=0;j<rules.length;j++){ var r=rules[j];
+        if (r.type===4 && r.media && /prefers-color-scheme\s*:\s*dark/i.test(r.media.mediaText)) DARK.push(r); }
+    }
+    return DARK;
+  }
+  function apply(t){
+    root.setAttribute("data-theme", t);
+    var rs = collect();
+    for (var i=0;i<rs.length;i++){ try { rs[i].media.mediaText = (t==="dark") ? "all" : "not all"; } catch(e){} }
+  }
+  var cur = saved() === "dark" ? "dark" : "light";   // по умолчанию светлая
+  root.setAttribute("data-theme", cur);              // сразу — data-theme-файлы не мигают
+  function paint(){
+    var b = document.getElementById("libTheme"); if (!b) return;
+    var dark = root.getAttribute("data-theme") === "dark";
+    var u = b.querySelector("use"); if (u) u.setAttribute("href", dark ? "#lb-moon" : "#lb-sun");
+    var tx = b.querySelector(".th-tx"); if (tx) tx.textContent = dark ? "Тёмная" : "Светлая";
+    b.title = dark ? "Тёмная тема — клик вернёт светлую" : "Светлая тема — клик включит тёмную";
+  }
+  function init(){
+    apply(cur); paint();
+    var b = document.getElementById("libTheme");
+    if (b) b.addEventListener("click", function(){
+      cur = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      apply(cur); store(cur); paint();
+    });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
+})();
+(function(){
+  var KEY = "lib-tiers";
+  function fname(){ try { return decodeURIComponent(location.pathname.split("/").pop() || ""); }
+                    catch(e){ return location.pathname.split("/").pop() || ""; } }
+  function load(){ try { return JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch(e){ return {}; } }
+  function save(o){ try { localStorage.setItem(KEY, JSON.stringify(o)); } catch(e){} }
+  var el = document.getElementById("libTier"); if (!el) return;
+  var ic = el.querySelector(".lt-ic"), tx = el.querySelector(".lt-tx");
+  var key = fname(), ORDER = [0,3,2,1];   // нет -> топ-3 -> топ-2 -> топ-1 -> нет (как в библиотеке)
+  function paint(t){
+    ic.className = "lt-ic" + (t ? (" t" + t) : "");
+    tx.textContent = t ? ("топ-" + t) : "";
+  }
+  paint((load()[key]) || 0);
+  el.addEventListener("click", function(){
+    var o = load(), cur = o[key] || 0;          // перечитываем: библиотека могла поменять
+    var nt = ORDER[(ORDER.indexOf(cur) + 1) % ORDER.length];
+    if (nt) o[key] = nt; else delete o[key];
+    save(o); paint(nt);
+  });
+})();
+</script>
+<!--/back-button-->
+<title>Разбор метода «Крынка» (Тэп) — MGC</title>
+<style>
+:root{
+  --bg:#f7f5f2; --card:#fff; --ink:#17171a; --ink2:#4a4a52; --mut:#8b8b93;
+  --line:#e4e0da; --good:#1a7f5a; --bad:#b3261e; --warn:#8a6d1f; --accent:#7a4a1f;
+  --goodbg:#e9f4ef; --badbg:#fcece9; --warnbg:#fbf3de;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --bg:#141519; --card:#1d1e23; --ink:#eae7e2; --ink2:#b6b3ad; --mut:#8a8782;
+    --line:#2f3138; --good:#4fc59a; --bad:#f0776c; --warn:#d6b45c; --accent:#d9a86a;
+    --goodbg:#123029; --badbg:#3a1e1c; --warnbg:#332b16; }
+}
+:root[data-theme="dark"]{ --bg:#141519; --card:#1d1e23; --ink:#eae7e2; --ink2:#b6b3ad; --mut:#8a8782;
+  --line:#2f3138; --good:#4fc59a; --bad:#f0776c; --warn:#d6b45c; --accent:#d9a86a;
+  --goodbg:#123029; --badbg:#3a1e1c; --warnbg:#332b16; }
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.65 "Segoe UI",-apple-system,Roboto,sans-serif;padding:56px 16px 90px}
+.wrap{max-width:52rem;margin:0 auto}
+h1,h2,h3{font-family:Georgia,"Iowan Old Style","Times New Roman",serif;
+  letter-spacing:-.015em;line-height:1.08;font-weight:600}
+h1{font-size:2.1rem;margin:0 0 10px}
+h2{font-size:1.4rem;margin:42px 0 13px;padding-top:17px;border-top:1px solid var(--line)}
+h3{font-size:1.07rem;margin:25px 0 8px}
+.sub{color:var(--mut);font-size:.94rem;margin-bottom:22px;line-height:1.55}
+.sub b{color:var(--ink2);font-weight:600}
+.sub span{display:block}
+p{margin:11px 0}
+.lead{font-size:1.05rem;color:var(--ink2)}
+.ic{width:1em;height:1em;flex:none;vertical-align:-.13em;
+  fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.ic.solid{fill:currentColor;stroke:none}
+h2 .ic{width:.8em;height:.8em;margin-right:.3em;vertical-align:-.02em}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:17px 20px;margin:16px 0}
+.card.ok{border-left:4px solid var(--good);background:var(--goodbg)}
+.card.no{border-left:4px solid var(--bad);background:var(--badbg)}
+.card.warn{border-left:4px solid var(--warn);background:var(--warnbg)}
+.card .big{font-size:1.14rem;font-weight:600;margin:0 0 7px;
+  font-family:Georgia,serif;letter-spacing:-.01em}
+table{border-collapse:collapse;width:100%;margin:14px 0;font-size:.92rem}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--mut);font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;
+  font-family:"Segoe UI",sans-serif}
+tr.tot td{border-top:2px solid var(--line);font-weight:600}
+tr.hl td{background:var(--goodbg)}
+tr.hlbad td{background:var(--badbg)}
+.num{font-variant-numeric:tabular-nums}
+.g{color:var(--good)} .r{color:var(--bad)} .m{color:var(--mut)} .w{color:var(--warn)}
+.k{font-weight:600}
+.scroll{overflow-x:auto}
+.note{font-size:.92rem;color:var(--ink2);background:var(--card);
+  border:1px solid var(--line);border-left:3px solid var(--accent);
+  border-radius:10px;padding:13px 17px;margin:16px 0}
+code{background:var(--card);border:1px solid var(--line);border-radius:5px;
+  padding:1px 5px;font-size:.87em;font-family:Consolas,monospace}
+ol,ul{margin:11px 0;padding-left:20px} li{margin:7px 0}
+.quote{font-size:.95rem;color:var(--ink2);border-left:3px solid var(--warn);
+  background:var(--warnbg);border-radius:0 10px 10px 0;padding:10px 16px;margin:12px 0;font-style:italic}
+.chart{margin:16px 0 4px}
+.crow{display:grid;grid-template-columns:15rem 1fr 4.6rem;align-items:center;gap:10px;margin:6px 0}
+.clab{font-size:.87rem;color:var(--ink2)}
+.ctrack{position:relative;height:22px;background:var(--line);border-radius:3px}
+.cbar{position:absolute;left:0;top:0;height:22px;border-radius:3px}
+.cmark{position:absolute;top:-5px;width:2px;height:32px;background:var(--bad)}
+.cval{font-size:.87rem;font-variant-numeric:tabular-nums;text-align:right}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:.85rem;color:var(--ink2);margin:8px 0 2px}
+.legend .sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+@media (max-width:34rem){ .crow{grid-template-columns:1fr;gap:3px} }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="ic-check" viewBox="0 0 24 24"><path d="M4 12.6l5.2 5.2L20 6.8"/></symbol>
+  <symbol id="ic-cross" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="ic-warn" viewBox="0 0 24 24"><path d="M12 4.4L21 19.4H3zM12 10v4.3M12 16.9v.1"/></symbol>
+  <symbol id="ic-chart" viewBox="0 0 24 24"><path d="M3.5 20h17M7 20v-5.5M12 20V8M17 20v-9"/></symbol>
+  <symbol id="ic-flame" viewBox="0 0 24 24"><path d="M12 3.2c0 3.4 0 6.6-1.4 6.6-.7 0-1.4-.7-1.7-2.2C7.9 8.7 7 10.2 7 12.2a5 5 0 1 0 10 0c0-4.5-5-9-5-9z"/></symbol>
+  <symbol id="ic-book" viewBox="0 0 24 24"><path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H19v16H5.5A1.5 1.5 0 0 0 4 20.5zM19 19v2H5.5"/></symbol>
+  <symbol id="ic-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="4.4"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></symbol>
+</defs></svg>
+
+<div class="wrap">
+
+<h1>Метод «Крынка» (Тэп): правила, скрытый мартингейл, проверка на MGC</h1>
+<div class="sub">
+  <span>Вопрос: можно ли автоматизировать метод и есть ли у входа эдж — проверить прибором</span>
+  <span>Данные: <b>MGC PXTRACK, 18 дней 21.07&ndash;13.08.2026</b> (probe_ind), плюс 3 отчёта стратегии G_MGC и 2 видео курса</span>
+  <span>13 августа 2026</span>
+</div>
+
+<div class="card no">
+  <p class="big">Метод автоматизируется полностью, но эджа у входа нет.</p>
+  <p>Голый вход (хвост-отбой у ближнего экстремума, без усреднения) на 18 днях MGC даёт
+  <b class="r">&minus;2,33 $/сделку после комиссии, t по дням &minus;10,11</b>, каждый день в минусе.
+  Показанные <b>76 % винрейта</b> идут не от входа (реальный винрейт входа <b>37 %</b>), а от
+  <b>усреднения в минус</b> — мартингейла, который на трейлинг-DD пропа убивает счёт. «Крынка»
+  для нашего счёта не годна.</p>
+</div>
+
+<h2><svg class="ic"><use href="#ic-book"/></svg>Что это за метод</h2>
+<p class="lead">«Крынка» = «края рынка». Дискреционный визуальный скальпинг: у ближнего экстремума
+ловишь хвост-отбой и берёшь короткий тейк. Метод инструменто-независим (учат на E-mini NASDAQ,
+применяют на золоте MGC). Правила простые и механичные:</p>
+<div class="scroll">
+<table>
+  <tr><th>Элемент</th><th style="text-align:left">Правило</th><th>Механично?</th></tr>
+  <tr><td>Идея</td><td style="text-align:left">«берёшь по чуть-чуть, но часто»; фикс-тейк 11 тиков, сделка живёт 1&ndash;3 свечи</td><td class="g">да</td></tr>
+  <tr><td>Экстремумы</td><td style="text-align:left">мысленный зигзаг, экстремумы задают зоны-«края» (зона, не точная цена)</td><td class="g">да</td></tr>
+  <tr><td>Где входить</td><td style="text-align:left">только у краёв; в середине флета сигнал слабый, пропускаем</td><td class="g">да</td></tr>
+  <tr><td>Триггер</td><td style="text-align:left">хвост/пин у края (отбой): вошёл на «задерге» обратно от экстремума</td><td class="g">да</td></tr>
+  <tr><td>Тренд-фильтр</td><td style="text-align:left">структура 1-2-3: пока вниз — только продажи, не лезть в противоход</td><td class="g">да</td></tr>
+  <tr><td>Пробой</td><td style="text-align:left">настоящий = 3+ полнотелых свечи за уровень; «ткнул-вернулся» = ложный, фейдим</td><td class="g">да</td></tr>
+  <tr><td>Таймфрейм</td><td style="text-align:left">минутка = уровни, 15/5 сек = вход; закрытия свечи не ждёт</td><td class="g">да</td></tr>
+  <tr><td>Стоп</td><td style="text-align:left">за экстремум, короткий, быстро в безубыток</td><td class="g">да</td></tr>
+  <tr><td class="k">Дискреция</td><td style="text-align:left">какой экстремум «значимый» + реакция в стакане (DOM)</td><td class="r">нет</td></tr>
+</table>
+</div>
+<p>Вход механичен на 8 из 9 пунктов. Не механичны выбор «того самого» экстремума и чтение
+стакана — их прибор проксирует ближайшим свинг-пивотом и геометрией ретеста.</p>
+
+<h2><svg class="ic"><use href="#ic-flame"/></svg>Что он замалчивает: это мартингейл</h2>
+<p>Высокий винрейт делается не эджем направления, а <b>усреднением в минус</b>. Плюс — 11 тиков;
+минус «спасается» доборами на следующем уровне до безубытка. Отсюда 76&ndash;100 % и подпись
+мартингейла в отчёте: <b>средний плюс меньше среднего минуса</b> (win/loss = 0,82).</p>
+<p>Он сам описывает механизм слива — и не применяет к себе:</p>
+<div class="quote">«Будут нести-нести, пока не сольёшься. Как только маржин-кол придёт — тут же вверх пролетит.»</div>
+<div class="quote">«500 баксов в минус ушёл — на этих движениях за 15 минут отобьёшь.»</div>
+<p><b>«Что дальше, когда он молчит»</b> — это день, когда усреднение не вытащило и пришёл маржин-кол.
+Два показанных 100 %-дня — это дни, когда мартингейл сработал; левый край распределения он не показывает.</p>
+
+<h3>Отчёт стратегии G_MGC — один день, и в нём уже видна хрупкость</h3>
+<div class="scroll">
+<table>
+  <tr><th>Метрика (10.02.2026, 76 сделок)</th><th>Значение</th><th style="text-align:left">Смысл</th></tr>
+  <tr><td>Винрейт</td><td class="num">76,3 %</td><td style="text-align:left">красиво, но это ОДИН день</td></tr>
+  <tr><td>Средний плюс / средний минус</td><td class="num r">0,82</td><td style="text-align:left">минус больше плюса — отрицательный перекос</td></tr>
+  <tr><td>Макс. серия минусов подряд</td><td class="num">9</td><td style="text-align:left">уже в лучшем дне</td></tr>
+  <tr><td>Макс. просадка</td><td class="num r">&minus;253,68 $</td><td style="text-align:left">за день с итогом +811 $</td></tr>
+  <tr><td>Комиссия</td><td class="num">120,08 $</td><td style="text-align:left">13 % от нетто съедено</td></tr>
+  <tr><td>Sharpe 11,92 / «доход 24 763 $/мес»</td><td class="num m">n=1</td><td style="text-align:left">экстраполяция одного дня, статистически пусто</td></tr>
+</table>
+</div>
+
+<h2><svg class="ic"><use href="#ic-target"/></svg>Прибор: голый вход на 18 днях MGC</h2>
+<p>Прибор <code>krynka.js</code> проверяет ТОЛЬКО слой входа, без усреднения: 30-сек бары из PXTRACK →
+свинг-экстремум (пивот ±3, история 30 мин) → свеча-хвост-отбой у края → фейд, стоп за экстремум +2 тика,
+тейк фикс → первое касание (стоп первым, пессимизм), горизонт 30 мин → netR после комиссии 2 тика ($2/круг).
+День = единица, leave-one-out по дням, зеркало-контроль (вход по пробою вместо фейда). Пороги заморожены до прогона.</p>
+
+<div class="scroll">
+<table>
+  <tr><th>Вариант</th><th>Сделок</th><th>Винрейт</th><th>netR $/сделку</th><th>t по дням</th><th>LOO худший t</th></tr>
+  <tr class="hlbad"><td class="k">Фейд, тейк 11 (метод)</td><td class="num">1024</td><td class="num">37,2 %</td><td class="num r">&minus;2,33</td><td class="num r">&minus;10,11</td><td class="num r">&minus;12,20</td></tr>
+  <tr><td>Фейд, тейк 22</td><td class="num">1022</td><td class="num">24,2 %</td><td class="num r">&minus;2,50</td><td class="num r">&minus;5,66</td><td class="num r">&minus;7,55</td></tr>
+  <tr><td>Зеркало (континуация) 11</td><td class="num">1024</td><td class="num">41,7 %</td><td class="num r">&minus;1,37</td><td class="num r">&minus;5,56</td><td class="num r">&minus;7,33</td></tr>
+  <tr><td>Зеркало (континуация) 22</td><td class="num">1020</td><td class="num">28,6 %</td><td class="num r">&minus;0,93</td><td class="num r">&minus;1,61</td><td class="num r">&minus;2,56</td></tr>
+</table>
+</div>
+
+<h3>Винрейт: показанный против реального</h3>
+<div class="chart">
+  <div class="crow"><div class="clab">Показано в отчёте (1 день, с усреднением)</div>
+    <div class="ctrack"><div class="cbar" style="width:76%;background:var(--warn)"></div></div><div class="cval">76 %</div></div>
+  <div class="crow"><div class="clab">Наш замер входа (18 дней, без усреднения)</div>
+    <div class="ctrack"><div class="cbar" style="width:37%;background:var(--bad)"></div></div><div class="cval">37 %</div></div>
+  <div class="crow"><div class="clab">Континуация, тот же вход наоборот</div>
+    <div class="ctrack"><div class="cbar" style="width:42%;background:var(--mut)"></div></div><div class="cval">42 %</div></div>
+</div>
+<p>Разрыв 76 % против 37 % — это вклад усреднения. Убери костыль — вход выигрывает 37 % и течёт.
+Более того: <b>63 % времени свежий экстремум пробивается, а не держит</b> — прямо против премиссы метода.
+И фейд, и континуация после комиссии в минусе: свежий экстремум на MGC 30с не несёт направления вообще.</p>
+
+<h3>По дням (фейд, тейк 11) — минус ВЕЗДЕ</h3>
+<div class="scroll">
+<table>
+  <tr><th>День</th><th>Сделок</th><th>Винрейт</th><th>netR сумма $</th><th>netR $/сделку</th></tr>
+  <tr><td>2026-07-21</td><td class="num">12</td><td class="num">33 %</td><td class="num r">&minus;34</td><td class="num r">&minus;2,83</td></tr>
+  <tr><td>2026-07-22</td><td class="num">39</td><td class="num">36 %</td><td class="num r">&minus;85</td><td class="num r">&minus;2,18</td></tr>
+  <tr><td>2026-07-23</td><td class="num">65</td><td class="num">43 %</td><td class="num r">&minus;48</td><td class="num r">&minus;0,74</td></tr>
+  <tr><td>2026-07-24</td><td class="num">75</td><td class="num">36 %</td><td class="num r">&minus;144</td><td class="num r">&minus;1,92</td></tr>
+  <tr><td>2026-07-27</td><td class="num">59</td><td class="num">39 %</td><td class="num r">&minus;97</td><td class="num r">&minus;1,64</td></tr>
+  <tr><td>2026-07-28</td><td class="num">19</td><td class="num">32 %</td><td class="num r">&minus;59</td><td class="num r">&minus;3,11</td></tr>
+  <tr><td>2026-07-29</td><td class="num">46</td><td class="num">37 %</td><td class="num r">&minus;113</td><td class="num r">&minus;2,46</td></tr>
+  <tr><td>2026-07-30</td><td class="num">58</td><td class="num">40 %</td><td class="num r">&minus;112</td><td class="num r">&minus;1,93</td></tr>
+  <tr><td>2026-07-31</td><td class="num">61</td><td class="num">26 %</td><td class="num r">&minus;202</td><td class="num r">&minus;3,31</td></tr>
+  <tr><td>2026-08-03</td><td class="num">58</td><td class="num">34 %</td><td class="num r">&minus;164</td><td class="num r">&minus;2,83</td></tr>
+  <tr><td>2026-08-04</td><td class="num">61</td><td class="num">31 %</td><td class="num r">&minus;202</td><td class="num r">&minus;3,31</td></tr>
+  <tr><td>2026-08-05</td><td class="num">54</td><td class="num">41 %</td><td class="num r">&minus;130</td><td class="num r">&minus;2,41</td></tr>
+  <tr><td>2026-08-06</td><td class="num">46</td><td class="num">48 %</td><td class="num r">&minus;46</td><td class="num r">&minus;1,00</td></tr>
+  <tr><td>2026-08-07</td><td class="num">58</td><td class="num">55 %</td><td class="num r">&minus;7</td><td class="num r">&minus;0,12</td></tr>
+  <tr><td>2026-08-10</td><td class="num">142</td><td class="num">37 %</td><td class="num r">&minus;370</td><td class="num r">&minus;2,61</td></tr>
+  <tr><td>2026-08-11</td><td class="num">48</td><td class="num">29 %</td><td class="num r">&minus;145</td><td class="num r">&minus;3,02</td></tr>
+  <tr><td>2026-08-12</td><td class="num">67</td><td class="num">33 %</td><td class="num r">&minus;263</td><td class="num r">&minus;3,93</td></tr>
+  <tr><td>2026-08-13</td><td class="num">56</td><td class="num">34 %</td><td class="num r">&minus;162</td><td class="num r">&minus;2,89</td></tr>
+  <tr class="tot"><td>Все 18 дней</td><td class="num">1024</td><td class="num">37,2 %</td><td class="num r">&minus;2383</td><td class="num r">&minus;2,33</td></tr>
+</table>
+</div>
+<p>Ни одного дня в плюсе (лучший — 07.08, ровно ноль). Поэтому leave-one-out делает результат
+не лучше, а хуже (&minus;12,20): минус не держится на одном дне, он всюду. Это далеко за порогом
+захоронения D-007 (|t|&lt;2 хороним; тут t=&minus;10 в неправильную сторону = анти-эдж).</p>
+
+<h2><svg class="ic"><use href="#ic-warn"/></svg>Что это значит для нас</h2>
+<ul>
+  <li><b>Автоматизируется — да.</b> Вход полностью механичен, прибор построен и отработал 18 дней.</li>
+  <li><b>Работает — нет.</b> У голого входа значимый отрицательный эдж после реальной комиссии.</li>
+  <li><b>Мартингейл нам запрещён.</b> Механизм, которым делается винрейт (усреднение 1&ndash;3 раза),
+    на трейлинг-DD $2500 = одно неудачное усреднение и счёт мёртв. Тот самый рычаг, что рисует 76 %, и есть движок слива.</li>
+  <li><b>Совпадает с нашим прайором класса.</b> «Фейд у уровня» мы хоронили не раз: M12 «борьба на уровне»
+    (t=&minus;2,15), поглощение, M5 дельта-дивергенция. «Крынка» — тот же класс, тем же итогом, но на носителе MGC и с более чистым замером.</li>
+</ul>
+
+<h2><svg class="ic"><use href="#ic-chart"/></svg>Приёмка разбора</h2>
+<table>
+  <tr><th>Вопрос</th><th style="text-align:left">Ответ</th></tr>
+  <tr><td>Ответил на исходный вопрос?</td><td style="text-align:left">Да: правила названы, вход автоматизирован, эдж измерен — его нет.</td></tr>
+  <tr><td>Число и проверка вне выборки?</td><td style="text-align:left">18 дней, 1024 сделки; day=unit t=&minus;10,11; LOO &minus;12,20.</td></tr>
+  <tr><td>Из скольких выбрано (K)?</td><td style="text-align:left">K=2 по тейку (11 и 22) — оба минус; параметры детектора не тюнились (одна заморозка).</td></tr>
+  <tr><td>Переживает скептика?</td><td style="text-align:left">Да: минус в КАЖДЫЙ день, зеркало-контроль тоже минус, LOO ухудшает — не артефакт одного дня и не одного направления.</td></tr>
+  <tr><td>Круговая связь / забегание вперёд?</td><td style="text-align:left">Нет: пивот подтверждается с лагом, вход по закрытию бара, исход вперёд по PXTRACK.</td></tr>
+  <tr><td>Противоречит прошлому?</td><td style="text-align:left">Нет — подтверждает прайор класса «фейд у уровня».</td></tr>
+  <tr><td class="k">Где могу быть неправ</td><td style="text-align:left">Гонял ВСЕ часы дня, не его окно «конец Европы / начало Америки». Но t=&minus;10 каждый день в обе стороны окном в плюс не перевернуть; если назовёшь точное окно — прогоню отдельно.</td></tr>
+</table>
+
+<h2>Данные и приборы</h2>
+<ul>
+  <li>Цена: <code>probe_ind\dump_ДАТА_MGC.csv</code> (PXTRACK), 18 дней 21.07&ndash;13.08.2026, взяты все.</li>
+  <li>Прибор входа: <code>ИдеиТрейдинга\analysis\krynka.js</code> (переиспользует движок первого касания из <code>winjournal.js</code>).</li>
+  <li>Материал: <code>Desktop\Трейдинг\Грааль</code> — видео «Крынка Ч.1/Ч.2», созвон bandicam, 3 отчёта G_MGC.</li>
+  <li>Комиссия MGC = 2 тика/круг ($2), заверено по счёту (память commission-real-cost).</li>
+</ul>
+
+</div>
