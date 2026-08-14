@@ -1,0 +1,372 @@
+﻿<meta charset="utf-8">
+<!--back-button-->
+<style>
+  body { padding-top: 4.6rem !important; }
+  .lib-bar {
+    position: fixed; top: 14px; left: 16px; z-index: 99999;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .back-to-lib {
+    display: inline-flex; align-items: center; gap: .5rem;
+    padding: .5rem 1rem; border-radius: 999px; text-decoration: none;
+    font: 600 14px/1 -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color: #fff; background: #3d6b4f; border: 1px solid rgba(0,0,0,.12);
+    box-shadow: 0 3px 10px rgba(0,0,0,.20);
+    transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
+  }
+  .back-to-lib:hover { background: #345e45; transform: translateY(-1px); box-shadow: 0 5px 14px rgba(0,0,0,.26); }
+  /* Иконки нарисованы, а не набраны эмодзи: обводка той же толщины, что текст,
+     цвет наследуется через currentColor. Разбор «7 признаков нейродизайна», 05.08.2026. */
+  .back-to-lib .ic { width: 1.05em; height: 1.05em; fill: none; stroke: currentColor;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vertical-align: -.14em; }
+  /* Звезда-переключатель уровня ЭТОГО файла (тот же lib-tiers, что в библиотеке) */
+  .lib-tier {
+    display: inline-flex; align-items: center; gap: .4rem; cursor: pointer;
+    padding: .5rem .8rem; border-radius: 999px;
+    font: 600 13px/1 -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color: #fff; background: #3d6b4f; border: 1px solid rgba(0,0,0,.12);
+    box-shadow: 0 3px 10px rgba(0,0,0,.20);
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .lib-tier:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(0,0,0,.26); }
+  /* Кнопка День/Ночь — переключатель темы ЭТОЙ страницы (правило 08.08.2026:
+     файл не смеет открываться тёмным сам собой; тема всегда переключается). */
+  .lib-theme {
+    display: inline-flex; align-items: center; gap: .4rem; cursor: pointer;
+    padding: .5rem .8rem; border-radius: 999px;
+    font: 600 13px/1 -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color: #fff; background: #3d6b4f; border: 1px solid rgba(0,0,0,.12);
+    box-shadow: 0 3px 10px rgba(0,0,0,.20);
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .lib-theme:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(0,0,0,.26); }
+  .lib-theme .ic { width: 1.05em; height: 1.05em; fill: none; stroke: currentColor;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vertical-align: -.14em; }
+  /* Звезда уровня: серая подложка + золотая заливка до отметки.
+     Раньше эффект держался на background-clip:text по глифу ★ — теперь это
+     две наложенные фигуры, и символ больше не нужен. */
+  .lib-tier .lt-ic { display: inline-flex; line-height: 1; }
+  .lib-tier .ltg { width: 1.25em; height: 1.25em; display: block; }
+  .lib-tier .s-base { fill: rgba(255,255,255,.55); stroke: none; }
+  .lib-tier .s-fill { fill: none; stroke: none; }
+  .lib-tier .lt-ic.t3 .s-fill { fill: url(#lbg3); }
+  .lib-tier .lt-ic.t2 .s-fill { fill: url(#lbg2); }
+  /* Топ-1: кольцо и увеличение, как в Библиотеке — метка одна и та же,
+     разъезжаться ей нельзя. */
+  .lib-tier .s-ring { fill: none; stroke: none; }
+  .lib-tier .lt-ic.t1 .s-fill { fill: url(#lbg1); }
+  .lib-tier .lt-ic.t1 .s-ring { stroke: #ffe08a; stroke-width: 1.4; opacity: .6; }
+  .lib-tier .lt-ic.t1 .ltg { transform: scale(1.18); transform-origin: center; }
+  .lib-tier .lt-tx { opacity: .95; }
+  /* Цвет кнопок бара в тёмной теме. Управляется и системной темой (когда JS ещё
+     не проставил data-theme), и ручным переключателем data-theme="dark". */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .back-to-lib,
+    :root:not([data-theme="light"]) .lib-tier,
+    :root:not([data-theme="light"]) .lib-theme { background: #2f6b46; color: #eafff2; border-color: rgba(255,255,255,.10); }
+  }
+  :root[data-theme="dark"] .back-to-lib,
+  :root[data-theme="dark"] .lib-tier,
+  :root[data-theme="dark"] .lib-theme { background: #2f6b46; color: #eafff2; border-color: rgba(255,255,255,.10); }
+  @media print { .lib-bar { display: none; } }
+</style>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="lbg3" x1="0" y1="1" x2="0" y2="0"><stop offset=".34" stop-color="#ffd15a"/><stop offset=".34" stop-color="#ffd15a" stop-opacity="0"/></linearGradient>
+  <linearGradient id="lbg2" x1="0" y1="1" x2="0" y2="0"><stop offset=".67" stop-color="#ffcf52"/><stop offset=".67" stop-color="#ffcf52" stop-opacity="0"/></linearGradient>
+  <linearGradient id="lbg1" x1="0" y1="1" x2="0" y2="0"><stop offset="1" stop-color="#ffe08a"/></linearGradient>
+  <symbol id="lb-back" viewBox="0 0 24 24"><path d="M20 12H5M10.6 6.4L4 12l6.6 5.6"/></symbol>
+  <symbol id="lb-star" viewBox="0 0 24 24"><path d="M12 2 L14.47 8.6 L21.51 8.91 L15.99 13.3 L17.88 20.09 L12 16.2 L6.12 20.09 L8.01 13.3 L2.49 8.91 L9.53 8.6 Z"/></symbol>
+  <symbol id="lb-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></symbol>
+  <symbol id="lb-moon" viewBox="0 0 24 24"><path d="M20.5 14.2A8.2 8.2 0 1 1 9.8 3.5a6.4 6.4 0 0 0 10.7 10.7z"/></symbol>
+</defs></svg>
+<div class="lib-bar">
+  <a href="_library.html" class="back-to-lib" title="Вернуться в библиотеку"><svg class="ic" aria-hidden="true"><use href="#lb-back"/></svg> Библиотека</a>
+  <button type="button" id="libTheme" class="lib-theme" title="Переключить тему страницы"><svg class="ic" aria-hidden="true"><use href="#lb-sun"/></svg><span class="th-tx">Светлая</span></button>
+  <button type="button" id="libTier" class="lib-tier" title="Уровень важности этого файла — клик перебирает: нет, топ-3, топ-2, топ-1"><span class="lt-ic"><svg class="ltg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" class="s-ring"/><use href="#lb-star" class="s-base"/><use href="#lb-star" class="s-fill"/></svg></span><span class="lt-tx"></span></button>
+</div>
+<script>
+(function(){
+  // Переключатель темы. Правило 08.08.2026: разбор не открывается тёмным сам по
+  // себе — по умолчанию СВЕТЛАЯ, кнопка всегда меняет и запоминает выбор.
+  // Работает и на новых файлах (палитра на data-theme), и на СТАРЫХ с фиксированной
+  // тёмной палитрой — глушим/включаем их @media (prefers-color-scheme: dark).
+  var TKEY = "report-theme", root = document.documentElement, DARK = null;
+  function saved(){ try { return localStorage.getItem(TKEY); } catch(e){ return null; } }
+  function store(v){ try { localStorage.setItem(TKEY, v); } catch(e){} }
+  function collect(){
+    if (DARK) return DARK; DARK = [];
+    for (var i=0;i<document.styleSheets.length;i++){
+      var rules; try { rules = document.styleSheets[i].cssRules; } catch(e){ continue; }
+      if (!rules) continue;
+      for (var j=0;j<rules.length;j++){ var r=rules[j];
+        if (r.type===4 && r.media && /prefers-color-scheme\s*:\s*dark/i.test(r.media.mediaText)) DARK.push(r); }
+    }
+    return DARK;
+  }
+  function apply(t){
+    root.setAttribute("data-theme", t);
+    var rs = collect();
+    for (var i=0;i<rs.length;i++){ try { rs[i].media.mediaText = (t==="dark") ? "all" : "not all"; } catch(e){} }
+  }
+  var cur = saved() === "dark" ? "dark" : "light";   // по умолчанию светлая
+  root.setAttribute("data-theme", cur);              // сразу — data-theme-файлы не мигают
+  function paint(){
+    var b = document.getElementById("libTheme"); if (!b) return;
+    var dark = root.getAttribute("data-theme") === "dark";
+    var u = b.querySelector("use"); if (u) u.setAttribute("href", dark ? "#lb-moon" : "#lb-sun");
+    var tx = b.querySelector(".th-tx"); if (tx) tx.textContent = dark ? "Тёмная" : "Светлая";
+    b.title = dark ? "Тёмная тема — клик вернёт светлую" : "Светлая тема — клик включит тёмную";
+  }
+  function init(){
+    apply(cur); paint();
+    var b = document.getElementById("libTheme");
+    if (b) b.addEventListener("click", function(){
+      cur = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      apply(cur); store(cur); paint();
+    });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
+})();
+(function(){
+  var KEY = "lib-tiers";
+  function fname(){ try { return decodeURIComponent(location.pathname.split("/").pop() || ""); }
+                    catch(e){ return location.pathname.split("/").pop() || ""; } }
+  function load(){ try { return JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch(e){ return {}; } }
+  function save(o){ try { localStorage.setItem(KEY, JSON.stringify(o)); } catch(e){} }
+  var el = document.getElementById("libTier"); if (!el) return;
+  var ic = el.querySelector(".lt-ic"), tx = el.querySelector(".lt-tx");
+  var key = fname(), ORDER = [0,3,2,1];   // нет -> топ-3 -> топ-2 -> топ-1 -> нет (как в библиотеке)
+  function paint(t){
+    ic.className = "lt-ic" + (t ? (" t" + t) : "");
+    tx.textContent = t ? ("топ-" + t) : "";
+  }
+  paint((load()[key]) || 0);
+  el.addEventListener("click", function(){
+    var o = load(), cur = o[key] || 0;          // перечитываем: библиотека могла поменять
+    var nt = ORDER[(ORDER.indexOf(cur) + 1) % ORDER.length];
+    if (nt) o[key] = nt; else delete o[key];
+    save(o); paint(nt);
+  });
+})();
+</script>
+<!--/back-button-->
+<title>Бирюза — две неисправности</title>
+<style>
+:root{
+  --bg:#f7f5f2; --card:#fff; --ink:#17171a; --ink2:#4a4a52; --mut:#8b8b93;
+  --line:#e4e0da; --good:#1a7f5a; --bad:#b3261e; --warn:#8a6d1f; --accent:#7a4a1f;
+  --goodbg:#e9f4ef; --badbg:#fcece9; --warnbg:#fbf3de;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --bg:#141519; --card:#1d1e23; --ink:#eae7e2; --ink2:#b6b3ad; --mut:#8a8782;
+    --line:#2f3138; --good:#4fc59a; --bad:#f0776c; --warn:#d6b45c; --accent:#d9a86a;
+    --goodbg:#123029; --badbg:#3a1e1c; --warnbg:#332b16; }
+}
+:root[data-theme="dark"]{ --bg:#141519; --card:#1d1e23; --ink:#eae7e2; --ink2:#b6b3ad; --mut:#8a8782;
+  --line:#2f3138; --good:#4fc59a; --bad:#f0776c; --warn:#d6b45c; --accent:#d9a86a;
+  --goodbg:#123029; --badbg:#3a1e1c; --warnbg:#332b16; }
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Segoe UI",-apple-system,Roboto,sans-serif;padding:20px 16px 90px}
+.wrap{max-width:52rem;margin:0 auto}
+.themebtn{position:fixed;top:14px;right:16px;z-index:99;display:inline-flex;align-items:center;gap:.4rem;cursor:pointer;
+  padding:.5rem .8rem;border-radius:999px;font:600 13px/1 "Segoe UI",sans-serif;color:#fff;background:#3d6b4f;border:1px solid rgba(0,0,0,.12);box-shadow:0 3px 10px rgba(0,0,0,.2)}
+h1,h2,h3{font-family:Georgia,"Times New Roman",serif;letter-spacing:-.015em;line-height:1.1;font-weight:600}
+h1{font-size:1.95rem;margin:0 0 10px}
+h2{font-size:1.32rem;margin:38px 0 12px;padding-top:16px;border-top:1px solid var(--line)}
+.sub{color:var(--mut);font-size:.94rem;margin-bottom:20px;line-height:1.55}
+.sub span{display:block}
+.sub b{color:var(--ink2)}
+p{margin:11px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 20px;margin:16px 0}
+.card.warn{border-left:4px solid var(--warn);background:var(--warnbg)}
+.card.no{border-left:4px solid var(--bad);background:var(--badbg)}
+.card .big{font-size:1.12rem;font-weight:600;margin:0 0 7px;font-family:Georgia,serif}
+table{border-collapse:collapse;width:100%;margin:14px 0;font-size:.92rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--mut);font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em}
+.mono{font-family:Consolas,monospace;font-size:.88em}
+code{background:var(--card);border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:.87em;font-family:Consolas,monospace}
+.r{color:var(--bad)} .g{color:var(--good)} .w{color:var(--warn)} .m{color:var(--mut)}
+ol,ul{margin:11px 0;padding-left:22px} li{margin:8px 0}
+.note{font-size:.92rem;color:var(--ink2);background:var(--card);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:13px 17px;margin:16px 0}
+.step{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 18px;margin:12px 0}
+.k{font-weight:600}
+</style>
+<button class="themebtn" id="tb" type="button">Светлая</button>
+<script>
+(function(){var K="biryuza-theme",r=document.documentElement,D=null;
+function sv(){try{return localStorage.getItem(K)}catch(e){return null}}
+function col(){if(D)return D;D=[];for(var i=0;i<document.styleSheets.length;i++){var s;try{s=document.styleSheets[i].cssRules}catch(e){continue}if(!s)continue;for(var j=0;j<s.length;j++){var x=s[j];if(x.type===4&&x.media&&/prefers-color-scheme\s*:\s*dark/i.test(x.media.mediaText))D.push(x)}}return D}
+function ap(t){r.setAttribute("data-theme",t);var a=col();for(var i=0;i<a.length;i++){try{a[i].media.mediaText=(t==="dark")?"all":"not all"}catch(e){}}}
+var c=sv()==="dark"?"dark":"light";r.setAttribute("data-theme",c);
+function pn(){var b=document.getElementById("tb");if(!b)return;b.textContent=r.getAttribute("data-theme")==="dark"?"Тёмная":"Светлая"}
+function init(){ap(c);pn();var b=document.getElementById("tb");b&&b.addEventListener("click",function(){c=r.getAttribute("data-theme")==="dark"?"light":"dark";ap(c);try{localStorage.setItem(K,c)}catch(e){}pn()})}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();})();
+</script>
+
+<div class="wrap">
+
+<h1>Бирюза — две неисправности: клапан ПВ 12 эт и модуль МШ4-М 84</h1>
+<div class="sub">
+  <span>Объект: <b>каркасные жилые дома №1 и 2, ул. Шафарнянская, мкр «Уручье-6», г. Минск</b> (проект 15/013-АДУ2, ПДЗ — противодымная защита; АПКП «Бирюза 5», ROVALANT/ИСБ 777)</span>
+  <span>Что на приборе: <b>«всего: 2»</b> неисправности — <span class="mono">1ш49_1 Клапан ПВ 12 эт — НЕИСПР.</span> и <span class="mono">5ш84_1 (без имени) — НЕИСПР.</span></span>
+  <span>14 августа 2026</span>
+</div>
+
+<h2 style="margin-top:10px;border-top:none;padding-top:0">Что означает путь 9 → 3 на приборе — 14.08.2026 17:44</h2>
+<p>Раскладку клавиатуры прочитал прямо с твоего фото прибора: <b>клавиша 9 = ШЛЕЙФ</b> (меню шлейфов). Значит путь <b>9 → 3 = «ШЛЕЙФ → Неисправность»</b> — это фильтр, показывающий <b>шлейфы (линии), которые сейчас в состоянии неисправности</b>. Потому обе неисправности и нашлись именно там.</p>
+<div class="note">
+  <b>Почему не через клавишу 1 «НЕИСПР».</b> Ты увидел: под клавишей 1 пусто. Поправка к прошлому совету — тип неисправности смотреть НЕ там, а в меню ШЛЕЙФ (9). Точную причину, почему главный список пуст, а в меню шлейфов две записи, по этому руководству не скажу: официальное руководство ROVALANT — на новую панель ПУ-40 LCD (5 кнопок), а у тебя панель с цифровой клавиатурой 1–9, другое поколение. Но функция пункта 9.3 однозначна: список шлейфов в неисправности.
+</div>
+<p><b>Что такое «неисправность шлейфа»</b> — из руководства ROVALANT (АПКП Бирюза): режим «неисправность» возникает при <b>обрыве, коротком замыкании, отсутствии связи с устройством или неисправности неадресного шлейфа</b>. Твои модуль 84 и концевик клапана сидят на <b>НЕадресных шлейфах</b> (МШ4 = «модуль контроля неадресных шлейфов») → это неисправность неадресной линии: обрыв / КЗ / не тот оконечный резистор / нет устройства на линии / несовпадение с конфигом.</p>
+<div class="card warn">
+  <p class="big">Следующий шаг — увидеть ТОЧНЫЙ тип</p>
+  <p>В меню ШЛЕЙФ (клавиша 9) попробуй <b>открыть конкретную запись</b> — <span class="mono">1ш49</span> и <span class="mono">5ш84</span> — стрелками/вводом. Если панель покажет тип (обрыв / КЗ / нет ответа) — это разведёт: <b>обрыв/КЗ = физика линии</b> (провод, резистор), а <b>«нет устройства / не отвечает» на шлейфе, которого нет = конфиг</b> (не тот номер шлейфа). Сфоткай, что покажет — тогда закрою вопрос по модулю 84 точно.</p>
+</div>
+
+<div class="card warn">
+  <p class="big">Уточнение 14.08.2026 17:26 — по модулю 84 я сказал увереннее, чем можно по одному фото. Нужен точный текст неисправности с прибора.</p>
+  <p><b>Шлейфы между собой НЕ «пересекаются» и не конфликтуют</b> — каждый шлейф отдельная независимая линия, неисправность одного не лезет в другой. Две неисправности — два независимых события, не связанных друг с другом.</p>
+  <p><b>«ИПР в воздухе / не подключён» — подтвердить не могу.</b> Конфиг говорит лишь, на какой позиции ИПР <i>прописан</i> (B: 84.3, A: 84.4). Отключён ли физически провод — из файла не видно; ИПР куда-то заведён, вопрос лишь, совпадает ли с конфигом.</p>
+  <p><b>Про сам фолт <span class="mono">5ш84</span>:</b> если читать его так же, как <span class="mono">1ш49</span> (по номеру элемента), «5» указывает на элемент <span class="mono">84.5</span> = <b>«Реле оповещения 5»</b> — а он в A и B ОДИНАКОВЫЙ. Тогда это НЕ разница конфига, а что-то на цепи оповещения (возможно физика, которую ты не проверял — ты перебирал клапаны). Значит мой «параметр 5→3» для модуля 84 <b>под вопросом</b>. Клапан 49 надёжнее: его фолт именно на элементе, где A и B реально расходятся (концевик шлейф 1↔2).</p>
+  <p><b>Что снимет догадку:</b> на Бирюзе нажать «1 НЕИСПР.» и открыть КАЖДУЮ запись — там будет тип: «обрыв шлейфа» / «КЗ» / «нет ответа» / «нет фазы» / «неверное положение». Сфоткать оба. До этого исправленный файл по модулю 84 не генерю (клапан 49 — можно чинить, а 84 сперва понять).</p>
+</div>
+
+<h2 style="margin-top:34px;border-top:1px solid var(--line);padding-top:17px">За что отвечает модуль 84 и как менять конфиг — 14.08.2026 17:17</h2>
+
+<p><b>Модуль МШ4-М №84 — это пожарная сигнализация 21-го (верхнего) этажа.</b> По конфигу на нём висит:</p>
+<table>
+  <tr><th>Шлейф / выход</th><th>Тип</th><th>Что контролирует</th></tr>
+  <tr><td class="mono">84.1</td><td class="mono">FOLD_SMOKE_FS</td><td>Дымовые извещатели 21 эт</td></tr>
+  <tr><td class="mono">84.2</td><td class="mono">FOLD_SMOKE_FS</td><td>Дымовые извещатели лифтхолла 21 эт</td></tr>
+  <tr><td class="mono">84.3 (B) / 84.4 (A)</td><td class="mono">FOLD_TERMO_FS</td><td>ИПР 21 эт (ручной пожарный извещатель)</td></tr>
+  <tr><td class="mono">84.5</td><td class="mono">RELAY_NOTIFI</td><td>Реле оповещения 5</td></tr>
+</table>
+<div class="note">Поэтому его НЕИСПР — не мелочь: под вопросом контроль обнаружения пожара на верхнем этаже (дымовые + лифтхолл + кнопка ИПР). Стоит закрыть в первую очередь.</div>
+
+<p><b>Точные значения из файлов</b> (сверил вариант A и B напрямую — чертёж для этого не нужен):</p>
+<table>
+  <tr><th>Устройство</th><th>Сейчас (B, фолтит)</th><th>Поставить (A)</th></tr>
+  <tr><td>Клапан 49 — шлейф концевых датчиков</td><td class="r">шлейф 1 <span class="mono">(49.1)</span></td><td class="g">шлейф 2 <span class="mono">(49.2)</span></td></tr>
+  <tr><td>Модуль 84 — параметр модуля</td><td class="r">5</td><td class="g">3</td></tr>
+</table>
+<p class="m" style="font-size:.9rem">Меняем только эти два (именно они в неисправности). ИПР 21 эт (шлейф 3 в B / 4 в A) НЕ трогаем — он в НЕИСПР не значится, а правка исправного элемента рискует создать новую неисправность.</p>
+
+<h3>Можно ли поменять на самом приборе, или нужен ноутбук?</h3>
+<p><b>Нужен ноутбук.</b> На клавиатуре Бирюзы (блок управления) можно только эксплуатировать: смотреть и сбрасывать неисправности, отключать зоны, ставить время. <b>Структуру конфига</b> — какое устройство на каком шлейфе, параметры модулей — панель менять НЕ даёт. Это правит только программа <b>«ИСБ 777 Комплекс» на ноутбуке</b>, подключённом к прибору, с записью в АПКП. То есть на объект ехать с ноутбуком и конфигуратором.</p>
+
+<div class="card" style="border-left:4px solid var(--good);background:var(--goodbg)">
+  <p class="big">Самый чистый путь (раз других листов проекта нет)</p>
+  <p>Я готовлю <b>исправленный файл конфигурации</b>: беру загруженный B и ставлю этим двум устройствам значения A (клапан 49 → шлейф 2, модуль 84 → параметр 3), остальное B (контроль открытого клапана) не трогаю. Напарник просто заливает готовый файл конфигуратором — без ручного ковыряния параметров на месте. У меня есть оба файла (A и B), чертёж для этого не требуется. <b>Скажешь — сгенерю.</b></p>
+</div>
+
+<h2 style="margin-top:34px">Что сделать на объекте — 14.08.2026 17:08</h2>
+<p style="color:var(--ink2)">Обе неисправности лечатся <b>переназначением шлейфа</b> двух устройств в АРМ ИСБ 777 (программа-конфигуратор, подключённая к Бирюзе). Перезаливать всю конфигурацию не нужно, паять/перекидывать провода не нужно — меняется один параметр «шлейф» у каждого из двух устройств и записывается в прибор.</p>
+
+<table>
+  <tr><th>Устройство</th><th>Прибор ищет на</th><th>Поставить на</th><th>Подтвердить перед записью</th></tr>
+  <tr>
+    <td><b>Клапан ПВ 12 эт</b><br><span class="mono">адр. 49 · MOD_FRU_A6</span></td>
+    <td class="r"><b>шлейф 1</b> <span class="m">(значение B)</span></td>
+    <td class="g"><b>шлейф 2</b> <span class="m">(значение A)</span></td>
+    <td>значение A по файлам конфига: концевик на шлейфе 2 (<span class="mono">49.2</span>) — см. блок вверху</td>
+  </tr>
+  <tr>
+    <td><b>Модуль МШ4-М 84</b><br><span class="mono">адр. 84 · MOD_FRM_A6</span></td>
+    <td class="r"><b>шлейф 5</b> <span class="m">(значение B)</span></td>
+    <td class="g"><b>шлейф 3</b> <span class="m">(значение A)</span></td>
+    <td>значение A по файлам конфига: параметр модуля 3 — см. блок вверху</td>
+  </tr>
+</table>
+
+<div class="step"><p><b class="k">1.</b> Подключить АРМ (ноутбук с ИСБ 777 Комплекс) к Бирюзе на объекте, считать текущую конфигурацию из прибора.</p></div>
+<div class="step"><p><b class="k">2.</b> Значения взяты из варианта A (прямая сверка файлов A и B): клапан 49 → шлейф <b>2</b>, модуль 84 → параметр <b>3</b>. Других листов проекта нет — опора на проектный конфиг A; финальная проверка — гаснут ли неисправности после записи и отрабатывает ли клапан.</p></div>
+<div class="step"><p><b class="k">3.</b> Выставить параметр «шлейф»: у клапана-49 <b class="r">1</b> → <b class="g">2</b>, у модуля-84 <b class="r">5</b> → <b class="g">3</b> (или то, что подтвердил шаг 2). Записать в прибор.</p></div>
+<div class="step"><p><b class="k">4.</b> Убедиться, что обе НЕИСПР погасли (стало «всего: 0»), и что клапан подпора 12 эт реально отрабатывает (открытие/закрытие, контроль положения). Остальное из B (контроль открытого клапана) не трогается.</p></div>
+
+<div class="card no">
+  <p class="big">Числа 2 и 3 — подтвердить по чертежу, не менять вслепую.</p>
+  <p>Это вывод из варианта A: в нём эти устройства на шлейфах 2 и 3, а в загруженном B — на 1 и 5, которых прибор не находит. Верный шлейф — тот, куда концевик/модуль реально заведён по проекту. Пожарная автоматика: после правки обязательно проверить реальную работу клапана. <b>Альтернатива на месте:</b> могу заранее подготовить исправленный файл конфига (B с шлейфами 2/3 для этих двух) — напарник просто зальёт готовое, без ручной правки в АРМ.</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--good);background:var(--goodbg)">
+  <p class="big">Дополнение 14.08.2026 17:01 — залить конфиг B эту ошибку НЕ уберёт. Причина чисто конфигурационная, не физика.</p>
+  <p>Ты был на объекте и перебрал эти клапаны — <b>физически исправны</b>. Значит версию «нет фазы питания / незавершённый монтаж заказчика» снимаем. Остаётся одно: <b>рассинхрон конфига по номеру шлейфа этих двух устройств.</b></p>
+</div>
+
+<h2 style="margin-top:24px">Была бы эта ошибка при конфиге B? — Да, была бы</h2>
+<p>Прибор сейчас ищет <b>клапан-49 на шлейфе 1</b> и <b>модуль-84 на шлейфе 5</b> — это видно прямо на экране (<span class="mono">1ш49</span>, <span class="mono">5ш84</span>). Раз железо исправно, а прибор пишет НЕИСПР — значит устройства физически <b>не на тех шлейфах</b>, что прописаны.</p>
+<p>А шлейфы <b>1 и 5 — это ровно значения варианта B</b> (в A они другие: 49 → шлейф 2, 84 → шлейф 3). Отсюда прямой ответ:</p>
+<ul>
+  <li><b>Загрузка B эти две неисправности НЕ снимет</b> — B как раз и ставит устройства на шлейфы 1 и 5, которых прибор не находит. То есть B в этой части и есть источник несостыковки.</li>
+  <li><b>Уберёт их</b> — переназначить эти два устройства на шлейфы, где они реально смонтированы. По всем признакам это значения варианта <b>A: 49 → шлейф 2, 84 → шлейф 3</b>. Правится параметром в АРМ ИСБ 777 поверх загруженного — <b>всю конфигурацию перезаливать не нужно</b>; остальное из B (контроль открытого клапана) остаётся.</li>
+</ul>
+<div class="note">Проверить руками одно: <b>какой шлейф правильный</b> — по чертежу (лист 6, строки <span class="mono">ту84.x</span> и клапан 12 эт) либо в АРМ посмотреть, на каком шлейфе эти устройства реально отвечают. Прибор говорит, что на 1 и 5 их нет; наиболее вероятный верный — <b>2 и 3</b> (вариант A). Выставить подтверждённое значение — и обе НЕИСПР должны погаснуть.</div>
+
+<div class="card warn">
+  <p class="big">Обе неисправности — ровно на тех ДВУХ устройствах, что мы 28.07 пометили как спорные точки конфига B.</p>
+  <p>Это почти наверняка не совпадение. Но причин две конкурирующих — <b>тюнинг конфига не совпал с монтажом</b> ИЛИ <b>реальная физическая неисправность</b> (нет питания привода / незавершённый монтаж). Разделить их можно ТОЧНЫМ текстом неисправности с прибора — сейчас видно только слово «НЕИСПР.», а не её тип.</p>
+</div>
+
+<h2>Что это за два устройства (по конфигу)</h2>
+<table>
+  <tr><th>На экране</th><th>Адрес в конфиге</th><th>Тип</th><th>Что это</th></tr>
+  <tr>
+    <td class="mono">1ш49_1<br>Клапан ПВ 12 эт</td>
+    <td class="mono">1.1.1.1.1.49.0</td>
+    <td class="mono">MOD_FRU_A6</td>
+    <td>Модуль <b>клапана подпора воздуха 12 этажа</b> (реверсивный привод + контроль положения по концевикам). ПВ = подпор воздуха = КТВ по легенде проекта.</td>
+  </tr>
+  <tr>
+    <td class="mono">5ш84_1<br>(имя пустое)</td>
+    <td class="mono">1.1.1.1.1.84.0</td>
+    <td class="mono">MOD_FRM_A6</td>
+    <td><b>Шлейфно-релейный адресный модуль МШ4-М №84</b> (один из модулей петли A6). Короткое имя в конфиге пустое (<code>''</code>) — потому на экране имя не показано. Не датчик, а «железо» — хостит шлейфы/реле.</td>
+  </tr>
+</table>
+
+<h2>Разница конфигов A и B на этих адресах</h2>
+<p>Сверил строки из <code>syscfg.sql</code> (A) и <code>syscfg_B_с_названиями.sql</code> (B, выбран к заливке):</p>
+<table>
+  <tr><th>Адрес</th><th>Вариант A</th><th>Вариант B (загружен?)</th><th>Итог</th></tr>
+  <tr>
+    <td class="mono">49 (клапан)</td>
+    <td class="mono">… 5, 0, 5 …</td>
+    <td class="mono">… 5, 0, 5 …</td>
+    <td>Строка модуля <b>идентична</b>. Различие 28.07 было в <b>номере шлейфа концевика</b> (под-элемент, шлейф 2↔1) — не в самом модуле.</td>
+  </tr>
+  <tr>
+    <td class="mono">84 (МШ4-М)</td>
+    <td class="mono">… 0, <b>3</b>, 10, −4096 …</td>
+    <td class="mono">… 0, <b class="w">5</b>, 10, −4096 …</td>
+    <td>Параметр <b>3 → 5</b> в B. Это тот самый «тюнинг контроля» (time2), который мы 28.07 оставили <b>открытым вопросом к автору проекта</b>.</td>
+  </tr>
+</table>
+<div class="note">
+  То есть B поменял поведение супервизии именно на модуле 84 (3→5) и переставил шлейф концевика клапана 49. Если эти настройки не совпадают с физическим монтажом на объекте — прибор контролирует «не тот» шлейф/состояние и выдаёт НЕИСПР. Это <b>рабочая гипотеза №1</b>.
+</div>
+
+<h2>Но чертёж намекает и на физику</h2>
+<p>На листе 6 («Схема подключения электрических приборов ПДЗ») слева — таблица состояний шлейфов <b>ту84 / ту85 / ту86</b> с пометками <b>«Нет фазы пит.»</b>, <b>«Выполнен Заказчиком»</b>, <b>«Ручной режим»</b>. То есть проект прямо допускает, что на этих модулях бывает <b>нет питания привода</b> или <b>монтаж со стороны заказчика не завершён</b>. Клапан без фазы питания привода или с необорудованным концевиком даёт ровно НЕИСПР. Это <b>рабочая гипотеза №2</b> (физика), и она независима от конфига.</p>
+
+<h2>Что делать — по порядку, проверка раньше правки</h2>
+<div class="step"><p><b class="k">Шаг 1 (главный, даёт ответ). Прочитать ТОЧНЫЙ текст неисправности на приборе.</b> На Бирюзе нажать кнопку <b>«1 НЕИСПР.»</b> и открыть каждую из двух записей — там будет тип: «обрыв шлейфа» / «КЗ шлейфа» / «нет ответа модуля» / «нет фазы» / «неверное положение клапана / концевик». Этот тип разделяет гипотезы 1 и 2. <b>Сфотографируй и пришли — уточню вывод.</b></p></div>
+<div class="step"><p><b class="k">Шаг 2. Сверить с монтажом по чертежу.</b> Клапан подпора 12 эт (адрес 49): проверить питание привода (фаза), концевики «открыт/закрыт» и их шлейф + оконечный резистор. Модуль МШ4-М 84: какие шлейфы он контролирует (лист 6, строки ту84.x), нет ли обрыва/КЗ линии, есть ли питание.</p></div>
+<div class="step"><p><b class="k">Шаг 3. Свести с конфигом B.</b> Если физика в порядке, а НЕИСПР держится — вероятно рассинхрон конфига: номер шлейфа концевика клапана 49 и параметр 3→5 модуля 84. <b>Это правится параметром в АРМ ИСБ 777 поверх загруженного B, БЕЗ перезаливки всего файла</b> — но какое значение верное, подтверждает <b>автор проекта</b> (у нас это и был открытый вопрос).</p></div>
+<div class="step"><p><b class="k">Шаг 4. Убедиться, что залит именно B.</b> Уточнить у напарника, что залит <code>syscfg_B_с_названиями.sql</code> + <code>objcfg.sql</code>. Если конфиг ещё НЕ грузили — тогда эти две неисправности первичны (то, ради чего и восстанавливали), и путь тот же: сначала тип неисправности, потом физика/параметр.</p></div>
+
+<div class="card no">
+  <p class="big">Осторожно: это противодымная защита (пожарная автоматика).</p>
+  <p>Ни один параметр клапана/модуля не менять «на глаз». Значение шлейфа/контроля клапана — только после подтверждения автором проекта и физической проверки. Клапан подпора воздуха 12 эт — рабочий элемент дымозащиты, он должен реально срабатывать.</p>
+</div>
+
+<h2>Файлы конфигурации (нашёл на диске)</h2>
+<ul>
+  <li><code>C:\Users\Ligoss\Downloads\syscfg_B_с_названиями.sql</code> — финальный B с названиями (к заливке)</li>
+  <li><code>C:\Users\Ligoss\Downloads\objcfg.sql</code> — дерево объекта/зон (к заливке вместе с B)</li>
+  <li><code>C:\Users\Ligoss\Downloads\syscfg.sql</code> — вариант A (для сверки)</li>
+  <li><code>C:\Users\Ligoss\Downloads\Бирюза-путь-A-восстановление.html</code> — инструкция по заливке (новый ИСБ 777, база dbsys)</li>
+  <li><code>C:\Users\Ligoss\Downloads\Бирюза-разбор-конфига.html</code> — полный разбор конфига + список 415 элементов</li>
+</ul>
+
+</div>
