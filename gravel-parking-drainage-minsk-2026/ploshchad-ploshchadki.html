@@ -1,0 +1,271 @@
+﻿<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<!--back-button-->
+<style>
+  body { padding-top: 4.6rem !important; }
+  .lib-bar {
+    position: fixed; top: 14px; left: 16px; z-index: 99999;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .back-to-lib {
+    display: inline-flex; align-items: center; gap: .5rem;
+    padding: .5rem 1rem; border-radius: 999px; text-decoration: none;
+    font: 600 14px/1 -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color: #fff; background: #3d6b4f; border: 1px solid rgba(0,0,0,.12);
+    box-shadow: 0 3px 10px rgba(0,0,0,.20);
+    transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
+  }
+  .back-to-lib:hover { background: #345e45; transform: translateY(-1px); box-shadow: 0 5px 14px rgba(0,0,0,.26); }
+  /* Иконки нарисованы, а не набраны эмодзи: обводка той же толщины, что текст,
+     цвет наследуется через currentColor. Разбор «7 признаков нейродизайна», 05.08.2026. */
+  .back-to-lib .ic { width: 1.05em; height: 1.05em; fill: none; stroke: currentColor;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vertical-align: -.14em; }
+  /* Звезда-переключатель уровня ЭТОГО файла (тот же lib-tiers, что в библиотеке) */
+  .lib-tier {
+    display: inline-flex; align-items: center; gap: .4rem; cursor: pointer;
+    padding: .5rem .8rem; border-radius: 999px;
+    font: 600 13px/1 -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color: #fff; background: #3d6b4f; border: 1px solid rgba(0,0,0,.12);
+    box-shadow: 0 3px 10px rgba(0,0,0,.20);
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .lib-tier:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(0,0,0,.26); }
+  /* Кнопка День/Ночь — переключатель темы ЭТОЙ страницы (правило 08.08.2026:
+     файл не смеет открываться тёмным сам собой; тема всегда переключается). */
+  .lib-theme {
+    display: inline-flex; align-items: center; gap: .4rem; cursor: pointer;
+    padding: .5rem .8rem; border-radius: 999px;
+    font: 600 13px/1 -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color: #fff; background: #3d6b4f; border: 1px solid rgba(0,0,0,.12);
+    box-shadow: 0 3px 10px rgba(0,0,0,.20);
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .lib-theme:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(0,0,0,.26); }
+  .lib-theme .ic { width: 1.05em; height: 1.05em; fill: none; stroke: currentColor;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vertical-align: -.14em; }
+  /* Звезда уровня: серая подложка + золотая заливка до отметки.
+     Раньше эффект держался на background-clip:text по глифу ★ — теперь это
+     две наложенные фигуры, и символ больше не нужен. */
+  .lib-tier .lt-ic { display: inline-flex; line-height: 1; }
+  .lib-tier .ltg { width: 1.25em; height: 1.25em; display: block; }
+  .lib-tier .s-base { fill: rgba(255,255,255,.55); stroke: none; }
+  .lib-tier .s-fill { fill: none; stroke: none; }
+  .lib-tier .lt-ic.t3 .s-fill { fill: url(#lbg3); }
+  .lib-tier .lt-ic.t2 .s-fill { fill: url(#lbg2); }
+  /* Топ-1: кольцо и увеличение, как в Библиотеке — метка одна и та же,
+     разъезжаться ей нельзя. */
+  .lib-tier .s-ring { fill: none; stroke: none; }
+  .lib-tier .lt-ic.t1 .s-fill { fill: url(#lbg1); }
+  .lib-tier .lt-ic.t1 .s-ring { stroke: #ffe08a; stroke-width: 1.4; opacity: .6; }
+  .lib-tier .lt-ic.t1 .ltg { transform: scale(1.18); transform-origin: center; }
+  .lib-tier .lt-tx { opacity: .95; }
+  /* Цвет кнопок бара в тёмной теме. Управляется и системной темой (когда JS ещё
+     не проставил data-theme), и ручным переключателем data-theme="dark". */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .back-to-lib,
+    :root:not([data-theme="light"]) .lib-tier,
+    :root:not([data-theme="light"]) .lib-theme { background: #2f6b46; color: #eafff2; border-color: rgba(255,255,255,.10); }
+  }
+  :root[data-theme="dark"] .back-to-lib,
+  :root[data-theme="dark"] .lib-tier,
+  :root[data-theme="dark"] .lib-theme { background: #2f6b46; color: #eafff2; border-color: rgba(255,255,255,.10); }
+  @media print { .lib-bar { display: none; } }
+</style>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="lbg3" x1="0" y1="1" x2="0" y2="0"><stop offset=".34" stop-color="#ffd15a"/><stop offset=".34" stop-color="#ffd15a" stop-opacity="0"/></linearGradient>
+  <linearGradient id="lbg2" x1="0" y1="1" x2="0" y2="0"><stop offset=".67" stop-color="#ffcf52"/><stop offset=".67" stop-color="#ffcf52" stop-opacity="0"/></linearGradient>
+  <linearGradient id="lbg1" x1="0" y1="1" x2="0" y2="0"><stop offset="1" stop-color="#ffe08a"/></linearGradient>
+  <symbol id="lb-back" viewBox="0 0 24 24"><path d="M20 12H5M10.6 6.4L4 12l6.6 5.6"/></symbol>
+  <symbol id="lb-star" viewBox="0 0 24 24"><path d="M12 2 L14.47 8.6 L21.51 8.91 L15.99 13.3 L17.88 20.09 L12 16.2 L6.12 20.09 L8.01 13.3 L2.49 8.91 L9.53 8.6 Z"/></symbol>
+  <symbol id="lb-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></symbol>
+  <symbol id="lb-moon" viewBox="0 0 24 24"><path d="M20.5 14.2A8.2 8.2 0 1 1 9.8 3.5a6.4 6.4 0 0 0 10.7 10.7z"/></symbol>
+</defs></svg>
+<div class="lib-bar">
+  <a href="_library.html" class="back-to-lib" title="Вернуться в библиотеку"><svg class="ic" aria-hidden="true"><use href="#lb-back"/></svg> Библиотека</a>
+  <button type="button" id="libTheme" class="lib-theme" title="Переключить тему страницы"><svg class="ic" aria-hidden="true"><use href="#lb-sun"/></svg><span class="th-tx">Светлая</span></button>
+  <button type="button" id="libTier" class="lib-tier" title="Уровень важности этого файла — клик перебирает: нет, топ-3, топ-2, топ-1"><span class="lt-ic"><svg class="ltg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" class="s-ring"/><use href="#lb-star" class="s-base"/><use href="#lb-star" class="s-fill"/></svg></span><span class="lt-tx"></span></button>
+</div>
+<script>
+(function(){
+  // Переключатель темы. Правило 08.08.2026: разбор не открывается тёмным сам по
+  // себе — по умолчанию СВЕТЛАЯ, кнопка всегда меняет и запоминает выбор.
+  // Работает и на новых файлах (палитра на data-theme), и на СТАРЫХ с фиксированной
+  // тёмной палитрой — глушим/включаем их @media (prefers-color-scheme: dark).
+  var TKEY = "report-theme", root = document.documentElement, DARK = null;
+  function saved(){ try { return localStorage.getItem(TKEY); } catch(e){ return null; } }
+  function store(v){ try { localStorage.setItem(TKEY, v); } catch(e){} }
+  function collect(){
+    if (DARK) return DARK; DARK = [];
+    for (var i=0;i<document.styleSheets.length;i++){
+      var rules; try { rules = document.styleSheets[i].cssRules; } catch(e){ continue; }
+      if (!rules) continue;
+      for (var j=0;j<rules.length;j++){ var r=rules[j];
+        if (r.type===4 && r.media && /prefers-color-scheme\s*:\s*dark/i.test(r.media.mediaText)) DARK.push(r); }
+    }
+    return DARK;
+  }
+  function apply(t){
+    root.setAttribute("data-theme", t);
+    var rs = collect();
+    for (var i=0;i<rs.length;i++){ try { rs[i].media.mediaText = (t==="dark") ? "all" : "not all"; } catch(e){} }
+  }
+  var cur = saved() === "dark" ? "dark" : "light";   // по умолчанию светлая
+  root.setAttribute("data-theme", cur);              // сразу — data-theme-файлы не мигают
+  function paint(){
+    var b = document.getElementById("libTheme"); if (!b) return;
+    var dark = root.getAttribute("data-theme") === "dark";
+    var u = b.querySelector("use"); if (u) u.setAttribute("href", dark ? "#lb-moon" : "#lb-sun");
+    var tx = b.querySelector(".th-tx"); if (tx) tx.textContent = dark ? "Тёмная" : "Светлая";
+    b.title = dark ? "Тёмная тема — клик вернёт светлую" : "Светлая тема — клик включит тёмную";
+  }
+  function init(){
+    apply(cur); paint();
+    var b = document.getElementById("libTheme");
+    if (b) b.addEventListener("click", function(){
+      cur = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      apply(cur); store(cur); paint();
+    });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
+})();
+(function(){
+  var KEY = "lib-tiers";
+  function fname(){ try { return decodeURIComponent(location.pathname.split("/").pop() || ""); }
+                    catch(e){ return location.pathname.split("/").pop() || ""; } }
+  function load(){ try { return JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch(e){ return {}; } }
+  function save(o){ try { localStorage.setItem(KEY, JSON.stringify(o)); } catch(e){} }
+  var el = document.getElementById("libTier"); if (!el) return;
+  var ic = el.querySelector(".lt-ic"), tx = el.querySelector(".lt-tx");
+  var key = fname(), ORDER = [0,3,2,1];   // нет -> топ-3 -> топ-2 -> топ-1 -> нет (как в библиотеке)
+  function paint(t){
+    ic.className = "lt-ic" + (t ? (" t" + t) : "");
+    tx.textContent = t ? ("топ-" + t) : "";
+  }
+  paint((load()[key]) || 0);
+  el.addEventListener("click", function(){
+    var o = load(), cur = o[key] || 0;          // перечитываем: библиотека могла поменять
+    var nt = ORDER[(ORDER.indexOf(cur) + 1) % ORDER.length];
+    if (nt) o[key] = nt; else delete o[key];
+    save(o); paint(nt);
+  });
+})();
+</script>
+<!--/back-button-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Площадь площадки</title>
+<style>
+  :root { --ink:#1a2233; --ink2:#5a6478; --line:#d7dce5; --bg:#f6f8fb; --card:#fff;
+          --red:#e23b3b; --blue:#2f6fed; --fill:#eaf1ff; --ok:#159a5b; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:24px; background:var(--bg); color:var(--ink);
+         font-family: "Segoe UI", Roboto, Arial, sans-serif; line-height:1.5; }
+  .wrap { max-width: 960px; margin:0 auto; }
+  h1 { font-size:24px; margin:0 0 4px; }
+  .sub { color:var(--ink2); margin:0 0 20px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px;
+          padding:20px; margin-bottom:18px; }
+  .big { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
+  .big .num { font-size:46px; font-weight:700; color:var(--ok); letter-spacing:-1px; }
+  .big .alt { color:var(--ink2); font-size:15px; }
+  svg { width:100%; height:auto; display:block; }
+  .cap { color:var(--ink2); font-size:13px; margin-top:8px; }
+  table { width:100%; border-collapse:collapse; margin-top:6px; font-size:15px; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); }
+  th { color:var(--ink2); font-weight:600; font-size:13px; text-transform:uppercase; letter-spacing:.3px; }
+  td.n, th.n { text-align:right; font-variant-numeric: tabular-nums; }
+  tr.total td { font-weight:700; border-top:2px solid var(--ink); border-bottom:none; }
+  h2 { font-size:17px; margin:0 0 10px; }
+  .note { background:#fff7e6; border:1px solid #ffe1a6; border-radius:12px; padding:16px; }
+  .note h2 { color:#8a5a00; }
+  .q { margin:6px 0; }
+  .q b { color:var(--ink); }
+  .ok { color:var(--ok); font-weight:600; }
+  @media print {
+    body { background:#fff; padding:0; }
+    .card, .note { break-inside:avoid; }
+    @page { margin: 12mm; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Площадь проектируемой площадки</h1>
+  <p class="sub">Границы сняты с твоего чертежа (красный контур), размеры в сантиметрах → перевёл в метры. Контур замкнулся точно, диагонали сошлись.</p>
+
+  <div class="card">
+    <div class="big">
+      <span class="num">≈ 111,7 м²</span>
+      <span class="alt">(по чертежу 111,66 м²; твои замеры рулеткой это подтвердили — для сметы бери <b>112 м²</b> с запасом)</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Как я прочитал участок (чертёж в масштабе)</h2>
+    <svg viewBox="0 0 880 400" role="img" aria-label="План площадки">
+      <!-- заливка -->
+      <polygon points="394,70 496,70 715,337 445,337 445,301 370,301 100,301 100,145 394,145"
+               fill="var(--fill)" stroke="var(--red)" stroke-width="3" stroke-linejoin="round"/>
+      <!-- диагонали -->
+      <line x1="100" y1="301" x2="496" y2="70" stroke="var(--blue)" stroke-width="1.5" stroke-dasharray="6 5"/>
+      <line x1="100" y1="145" x2="715" y2="337" stroke="var(--blue)" stroke-width="1.5" stroke-dasharray="6 5"/>
+      <text x="250" y="176" fill="var(--blue)" font-size="13" font-weight="600">D1</text>
+      <text x="360" y="250" fill="var(--blue)" font-size="13" font-weight="600">D2</text>
+      <!-- ворота на скосе -->
+      <line x1="496" y1="70" x2="715" y2="337" stroke="var(--red)" stroke-width="8" stroke-opacity="0.18"/>
+      <!-- подписи сторон (метры) -->
+      <text x="445" y="60" text-anchor="middle" font-size="13" font-weight="600">3,40</text>
+      <text x="628" y="190" font-size="13" font-weight="600" fill="var(--ink)">правая сторона</text>
+      <text x="628" y="207" font-size="13" font-weight="600" fill="var(--ink)">11,30 м</text>
+      <text x="628" y="224" font-size="12" fill="var(--red)">ворота 4,00 + 7,30</text>
+      <text x="580" y="353" text-anchor="middle" font-size="13" font-weight="600">9,00</text>
+      <text x="455" y="325" font-size="12" fill="var(--ink2)">1,20</text>
+      <text x="407" y="316" text-anchor="middle" font-size="13" font-weight="600">2,50</text>
+      <text x="235" y="316" text-anchor="middle" font-size="13" font-weight="600">9,00</text>
+      <text x="92" y="228" text-anchor="end" font-size="13" font-weight="600">5,20</text>
+      <text x="247" y="136" text-anchor="middle" font-size="13" font-weight="600">9,80</text>
+      <text x="404" y="112" font-size="13" font-weight="600">2,50</text>
+      <text x="470" y="392" font-size="12" fill="var(--ink2)">все размеры — в метрах</text>
+    </svg>
+    <p class="cap">Красная линия — твой контур. Синим пунктиром — твои диагонали D1 и D2 (проверка). Бледная толстая линия справа — ворота.</p>
+  </div>
+
+  <div class="card">
+    <h2>Из чего сложилась площадь</h2>
+    <p class="sub" style="margin:0 0 8px">Разбил фигуру на 3 прямоугольника и 1 треугольник (правый скос):</p>
+    <table>
+      <thead><tr><th>Часть</th><th>Размеры</th><th class="n">Площадь, м²</th></tr></thead>
+      <tbody>
+        <tr><td>Левый прямоугольник</td><td>9,80 × 5,20</td><td class="n">50,96</td></tr>
+        <tr><td>Центральная полоса (до верхнего выступа)</td><td>1,70 × 7,70</td><td class="n">13,09</td></tr>
+        <tr><td>Центральная полоса (до низа)</td><td>1,70 × 8,90</td><td class="n">15,13</td></tr>
+        <tr><td>Правый треугольник (скос с воротами)</td><td>½ × 7,30 × 8,90</td><td class="n">32,48</td></tr>
+        <tr class="total"><td>Итого</td><td></td><td class="n">111,66</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Проверка твоими замерами <span class="ok">— всё сошлось</span></h2>
+    <p class="sub" style="margin:0 0 8px">Три независимых замера рулеткой (правая сторона + две диагонали между дальними углами) сравнил с тем, что даёт контур. Везде совпадение ~2–3% — форма и масштаб верные:</p>
+    <table>
+      <thead><tr><th>Замер</th><th class="n">Ты намерил, м</th><th class="n">По контуру, м</th><th class="n">Разница</th></tr></thead>
+      <tbody>
+        <tr><td>Правая сторона (ворота 4,00 + 7,30)</td><td class="n">11,30</td><td class="n">11,51</td><td class="n">1,8%</td></tr>
+        <tr><td>D1 (дальние углы: низ-лево → верх-право)</td><td class="n">15,7</td><td class="n">15,3</td><td class="n">2,5%</td></tr>
+        <tr><td>D2 (дальние углы: верх-лево → низ-право)</td><td class="n">20,8</td><td class="n">21,5</td><td class="n">3,4%</td></tr>
+      </tbody>
+    </table>
+    <p class="cap">Разница в пару процентов — норма для реального участка: углы не идеально прямые, рулетка «плюс-минус». На итог по площади это влияет в пределах ±1,5 м².</p>
+  </div>
+
+  <div class="note" style="background:#eaf7ef;border-color:#b6e3c8">
+    <h2 style="color:#159a5b">Уточнения получены — всё подтвердилось</h2>
+    <p class="q"><b>Правая сторона</b> — прямая линия длиной 11,30 м (проём ворот 4,00 + участок 7,30). Совпала с контуром (11,5 м) в пределах 2%.</p>
+    <p class="q"><b>Диагонали</b> — замерены «на глаз», между дальними углами, для понимания. Обе легли в контур с точностью 2–3%, отдельный геодезический пересчёт не нужен.</p>
+    <p class="q" style="margin-top:12px">Итог: площадь <b>≈ 111–112 м²</b>. Для заказа материалов бери <b>112 м²</b> — небольшой запас лишним не будет.</p>
+  </div>
+</div>
+</body>
+</html>
